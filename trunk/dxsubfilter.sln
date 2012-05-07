@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dxsubfilter", "source\dxsubfilter\dxsubfilter.vcxproj", "{D82900CE-289B-46E3-93F2-CD9E2365D07D}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3D87DDFD-8EFC-4272-8D45-9EC0E5FA0555} = {3D87DDFD-8EFC-4272-8D45-9EC0E5FA0555}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "subtitlecore", "source\subtitlecore\subtitlecore.vcxproj", "{3D87DDFD-8EFC-4272-8D45-9EC0E5FA0555}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D82900CE-289B-46E3-93F2-CD9E2365D07D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D82900CE-289B-46E3-93F2-CD9E2365D07D}.Debug|Win32.Build.0 = Debug|Win32
+		{D82900CE-289B-46E3-93F2-CD9E2365D07D}.Release|Win32.ActiveCfg = Release|Win32
+		{D82900CE-289B-46E3-93F2-CD9E2365D07D}.Release|Win32.Build.0 = Release|Win32
+		{3D87DDFD-8EFC-4272-8D45-9EC0E5FA0555}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3D87DDFD-8EFC-4272-8D45-9EC0E5FA0555}.Debug|Win32.Build.0 = Debug|Win32
+		{3D87DDFD-8EFC-4272-8D45-9EC0E5FA0555}.Release|Win32.ActiveCfg = Release|Win32
+		{3D87DDFD-8EFC-4272-8D45-9EC0E5FA0555}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

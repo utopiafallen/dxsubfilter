@@ -47,7 +47,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
 STDAPI DllRegisterServer()
 {
-	return AMovieDllRegisterServer();
+	return AMovieDllRegisterServer2(TRUE);
 }
 
 STDAPI DllRegisterServer2(BOOL b)
@@ -57,6 +57,6 @@ STDAPI DllRegisterServer2(BOOL b)
 
 STDAPI DllUnregisterServer()
 {
-	return AMovieDllUnregisterServer();
+	return AMovieDllRegisterServer2(FALSE);
 }
 

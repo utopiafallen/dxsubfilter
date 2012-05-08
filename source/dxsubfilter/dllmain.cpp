@@ -18,7 +18,7 @@ int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 
 //------------------------------------------------------------------------------
-/*		DLL Entry Point			*/
+//	DLL Entry Point	for normal DLLs.
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
                        LPVOID lpReserved
@@ -37,6 +37,27 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	}
 	return TRUE;
 }
+
+// DLL Entry Point for DirectShow filters. Note that BaseClasses already provides an
+// implementation for us that we can probably just reuse, but I'm leaving this commented
+// definition here in case we need to provide a custom implementation.
+//extern "C"
+//DECLSPEC_NOINLINE
+//BOOL 
+//WINAPI
+//DllEntryPoint(
+//    HINSTANCE hInstance, 
+//    ULONG ulReason, 
+//    __inout_opt LPVOID pv
+//    )
+//{
+//    if ( ulReason == DLL_PROCESS_ATTACH ) {
+//        // Must happen before any other code is executed.  Thankfully - it's re-entrant
+//        __security_init_cookie();
+//    }
+//    return _DllEntryPoint(hInstance, ulReason, pv);
+//}
+
 //------------------------------------------------------------------------------
 
 

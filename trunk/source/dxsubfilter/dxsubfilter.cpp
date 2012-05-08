@@ -16,7 +16,33 @@ DXSUBFILTER_API int fndxsubfilter(void)
 
 // This is the constructor of a class that has been exported.
 // see dxsubfilter.h for the class definition
-Cdxsubfilter::Cdxsubfilter()
+CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk, HRESULT* phr) 
+	: CTransInPlaceFilter(DXSUBFILTER_NAME, pUnk, CLSID_DXSubFilter, phr)
 {
-	return;
+
+}
+
+CDXSubFilter::~CDXSubFilter()
+{
+
+}
+
+CUnknown* CDXSubFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
+{
+	return new CDXSubFilter(pUnk, phr);
+}
+
+HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
+{
+	return S_OK;
+}
+
+HRESULT CDXSubFilter::Transform(IMediaSample* pSample)
+{
+	return S_OK;
+}
+
+HRESULT CDXSubFilter::Transform(IMediaSample* pIn, IMediaSample* pOut)
+{
+	return S_OK;
 }

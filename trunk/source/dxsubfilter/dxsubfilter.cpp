@@ -42,11 +42,6 @@ HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* m
 	return S_OK;
 }
 
-HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
-{
-	return S_OK;
-}
-
 HRESULT CDXSubFilter::DecideBufferSize(IMemAllocator * pAllocator, ALLOCATOR_PROPERTIES *pprop)
 {
 	return S_OK;
@@ -56,3 +51,9 @@ HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 {
 	return S_OK;
 }
+
+HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
+{
+	return S_OK;
+}
+

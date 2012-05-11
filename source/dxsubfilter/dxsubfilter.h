@@ -23,20 +23,34 @@
 //	// TODO: add your methods here.
 //};
 
-class __declspec(uuid("3B6ED1B8-ECF6-422A-8F07-48980E6482CE")) CDXSubFilter : public CTransInPlaceFilter
+class __declspec(uuid("3B6ED1B8-ECF6-422A-8F07-48980E6482CE")) CDXSubFilter : public CTransformFilter
 {
 public: // Functions
 	static CUnknown* WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT* phr);
 	
-	CDXSubFilter(LPUNKNOWN pUnk, HRESULT* phr);
+	CDXSubFilter(LPUNKNOWN pUnk);
 	virtual ~CDXSubFilter();
 
 	//===================================================
-	// CTransInPlaceFilter overrides
+	// CTransformFilter abstract overrides
 	//===================================================
-	virtual HRESULT CheckInputType(const CMediaType* mtIn);
-	virtual HRESULT Transform(IMediaSample *pSample);
+
+	// Perform transform
 	virtual HRESULT Transform(IMediaSample * pIn, IMediaSample *pOut);
+
+    // Check if we can support mtIn
+    virtual HRESULT CheckInputType(const CMediaType* mtIn);
+
+    // Check if we can support the transform from this input to this output
+    virtual HRESULT CheckTransform(const CMediaType* mtIn, const CMediaType* mtOut);
+
+    // Call the SetProperties function with appropriate arguments
+    virtual HRESULT DecideBufferSize(
+                        IMemAllocator * pAllocator,
+                        ALLOCATOR_PROPERTIES *pprop);
+
+    // Suggest OUTPUT pin media types
+    virtual HRESULT GetMediaType(int iPosition, CMediaType *pMediaType);
 };
 
 extern DXSUBFILTER_API int ndxsubfilter;

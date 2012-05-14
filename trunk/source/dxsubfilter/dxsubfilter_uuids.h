@@ -12,6 +12,8 @@
                 = { l, w1, w2, { b1, b2,  b3,  b4,  b5,  b6,  b7,  b8 } }
 
 
+// Custom media types defined by MKV? At least Haali MKV splitter will return these
+
 // {3B6ED1B8-ECF6-422A-8F07-48980E6482CE}		DXSubFilter
 extern const wchar_t* DXSUBFILTER_NAME;
 DXSUBFILTER_DEFINE_GUID(CLSID_DXSubFilter, 

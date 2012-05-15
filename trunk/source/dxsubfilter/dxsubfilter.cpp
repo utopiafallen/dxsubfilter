@@ -49,7 +49,7 @@ HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 		// Not a supported subtype so fail
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
-	else if (mtIn->majortype == MEDIATYPE_Text)
+	else if (mtIn->majortype == MEDIATYPE_Text || mtIn->majortype == MEDIATYPE_Subtitle)
 	{
 		return S_OK;
 	}

@@ -1,11 +1,11 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "stdafx.h"
+#include "registryhelpers.h"
 #include "dxsubfilter_uuids.h"
 #include "dxsubfilter.h"
 
 //------------------------------------------------------------------------------
-// Global filter information for proper DirectShow registration as well as registry
-// location.
+// Global filter information for proper DirectShow registration
 
 AMOVIESETUP_MEDIATYPE sudVideoMediaTypes[] = {
 	{ &MEDIATYPE_Video, &MEDIASUBTYPE_AYUV },
@@ -20,6 +20,10 @@ AMOVIESETUP_MEDIATYPE sudVideoMediaTypes[] = {
 
 AMOVIESETUP_MEDIATYPE sudSubtitleMediaTypes[] = {
 	{ &MEDIATYPE_Text, &MEDIASUBTYPE_None },
+	{ &MEDIATYPE_Subtitle, &MEDIASUBTYPE_UTF8 },
+	{ &MEDIATYPE_Subtitle, &MEDIASUBTYPE_SSA },
+	{ &MEDIATYPE_Subtitle, &MEDIASUBTYPE_ASS },
+	{ &MEDIATYPE_Subtitle, &MEDIASUBTYPE_VOBSUB },
 };
 
 AMOVIESETUP_PIN sudOutputPin = {
@@ -59,8 +63,8 @@ AMOVIESETUP_PIN sudInputSubtitlePin = {
 };
 
 AMOVIESETUP_PIN sudDXSubFilterPins[] = {
-	sudInputSubtitlePin,
 	sudInputVideoPin,
+	sudInputSubtitlePin,
 	sudOutputPin,
 };
 
@@ -71,9 +75,6 @@ AMOVIESETUP_FILTER sudDXSubFilterReg = {
 	ARRAYSIZE(sudDXSubFilterPins),	// Number of pin types.
     sudDXSubFilterPins				// Pointer to pin information.
 };
-
-static const wchar_t* DXSUBFILTER_SUBKEY_NAME = L"Software\\dxsubfilter";
-
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
@@ -93,53 +94,6 @@ CFactoryTemplate g_Templates[1] = {
 };
 
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
-//------------------------------------------------------------------------------
-
-//------------------------------------------------------------------------------
-// Registry functions. Configuration data is stored in HCKU/Software/dxsubfilter
-
-// Returns true if filter configuration data was loaded successfully from registry.
-// Returns false if filter configuration data was not found in registry.
-bool LoadFilterConfigurationFromRegistry()
-{
-	HKEY hDXSubFilterKey;
-
-	LONG lRegOpenResult = RegOpenKeyEx(HKEY_CURRENT_USER, DXSUBFILTER_SUBKEY_NAME, 0, 
-										KEY_READ, &hDXSubFilterKey);
-
-	if (lRegOpenResult == ERROR_SUCCESS)
-	{
-		// Load data. Will probably store this in a struct whose pointer is passed into the 
-		// initialization function of CDXSubFilter
-		UNREFERENCED_PARAMETER(hDXSubFilterKey);
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-// Write default filter configuration data to registry.
-void WriteFilterConfigurationDataToRegistry()
-{
-	HKEY hDXSubFilterKey;
-
-	LONG lRegCreateResult = RegCreateKeyEx(HKEY_CURRENT_USER, DXSUBFILTER_SUBKEY_NAME, 0,
-		NULL, REG_OPTION_NON_VOLATILE, KEY_WRITE | KEY_READ, NULL, &hDXSubFilterKey, NULL);
-
-	if (lRegCreateResult == ERROR_SUCCESS)
-	{
-		// Write data.
-		UNREFERENCED_PARAMETER(hDXSubFilterKey);
-	}
-}
-
-// Remove filter configuration data from registry.
-void RemoveFilterConfigurationDataFromRegistry()
-{
-	RegDeleteKeyEx(HKEY_CURRENT_USER, DXSUBFILTER_SUBKEY_NAME, KEY_WOW64_32KEY, 0);
-}
 //------------------------------------------------------------------------------
 
 
@@ -164,32 +118,28 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	return TRUE;
 }
 
+// The following functions are actually defined in BaseClasses, but we need to give their
+// function signature here so we can call them correctly.
+extern "C" void __cdecl __security_init_cookie(void);
+extern "C" BOOL WINAPI _DllEntryPoint(HINSTANCE, ULONG, __inout_opt LPVOID);
+
 // DLL Entry Point for DirectShow filters.
-//extern "C" void __cdecl __security_init_cookie(void);
-//extern "C" BOOL WINAPI _DllEntryPoint(HINSTANCE, ULONG, __inout_opt LPVOID);
-//
-//DECLSPEC_NOINLINE
-//BOOL 
-//WINAPI
-//DllEntryPoint(
-//    HINSTANCE hInstance, 
-//    ULONG ulReason, 
-//    __inout_opt LPVOID pv
-//    )
-//{
-//    if ( ulReason == DLL_PROCESS_ATTACH ) {
-//        // Must happen before any other code is executed.  Thankfully - it's re-entrant
-//        __security_init_cookie();
-//    }
-//
-//	// Check registry for configuration data. If none is found, store default settings to registry.
-//	if (LoadFilterConfigurationFromRegistry() == false)
-//	{
-//		WriteFilterConfigurationDataToRegistry();
-//	}
-//
-//    return _DllEntryPoint(hInstance, ulReason, pv);
-//}
+DECLSPEC_NOINLINE
+BOOL 
+WINAPI
+DllEntryPoint(
+    HINSTANCE hInstance, 
+    ULONG ulReason, 
+    __inout_opt LPVOID pv
+    )
+{
+    if ( ulReason == DLL_PROCESS_ATTACH ) {
+        // Must happen before any other code is executed.  Thankfully - it's re-entrant
+        __security_init_cookie();
+    }
+
+    return _DllEntryPoint(hInstance, ulReason, pv);
+}
 
 //------------------------------------------------------------------------------
 
@@ -201,17 +151,13 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
 STDAPI DllRegisterServer()
 {
+	DXSubFilter::WriteFilterConfigurationDataToRegistry();
 	return AMovieDllRegisterServer2(TRUE);
-}
-
-STDAPI DllRegisterServer2(BOOL b)
-{
-	return AMovieDllRegisterServer2(b);
 }
 
 STDAPI DllUnregisterServer()
 {
-	RemoveFilterConfigurationDataFromRegistry();
+	DXSubFilter::RemoveFilterConfigurationDataFromRegistry();
 	return AMovieDllRegisterServer2(FALSE);
 }
 

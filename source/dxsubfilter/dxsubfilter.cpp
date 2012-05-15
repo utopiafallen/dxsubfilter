@@ -10,18 +10,70 @@ using namespace DXSubFilter;
 // see dxsubfilter.h for the class definition
 CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk) 
 	: CTransformFilter(DXSUBFILTER_NAME, pUnk, CLSID_DXSubFilter)
+	, m_pInputSubtitlePin(nullptr)
 {
-
+	// Just in case the CTransformFilter constructor doesn't default these to null
+	m_pInput = nullptr;
+	m_pOutput = nullptr;
 }
 
 CDXSubFilter::~CDXSubFilter()
 {
-
+	// Do I need to manually delete m_pInput and m_pOutput?
+	delete m_pInputSubtitlePin;
 }
 
 CUnknown* CDXSubFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 {
 	return new CDXSubFilter(pUnk);
+}
+
+int CDXSubFilter::GetPinCount()
+{
+	return m_iPinCount;
+}
+
+CBasePin* CDXSubFilter::GetPin(int n)
+{
+	HRESULT hr = S_OK;
+	switch (n)
+	{
+	case 0:
+		if (!m_pInput)
+		{
+			m_pInput = new CTransformInputPin(L"Video", this, &hr, L"Video");
+
+			if (FAILED(hr))
+			{
+				return nullptr;
+			}
+		}
+		return m_pInput;
+	case 1:
+		if (!m_pOutput)
+		{
+			m_pOutput = new CTransformOutputPin(L"Output", this, &hr, L"Output");
+
+			if (FAILED(hr))
+			{
+				return nullptr;
+			}
+		}
+		return m_pOutput;
+	case 2:
+		if (!m_pInputSubtitlePin)
+		{
+			m_pInputSubtitlePin = new CTransformInputPin(L"Subtitle", this, &hr, L"Subtitle");
+
+			if (FAILED(hr))
+			{
+				return nullptr;
+			}
+		}
+		return m_pInputSubtitlePin;
+	default:
+		return nullptr;
+	}
 }
 
 HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)

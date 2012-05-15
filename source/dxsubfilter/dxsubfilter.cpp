@@ -76,15 +76,50 @@ CBasePin* CDXSubFilter::GetPin(int n)
 	}
 }
 
+bool CDXSubFilter::CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType)
+{
+	bool result = false;
+
+	GUID subtype = pMediaType->subtype;
+	for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT; i++)
+	{
+		if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[i])
+		{
+			result = true;
+			break;
+		}
+	}
+
+	return result;
+}
+
+bool CDXSubFilter::CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType)
+{
+	bool result = false;
+
+	GUID subtype = pMediaType->subtype;
+	for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT; i++)
+	{
+		if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[i])
+		{
+			result = true;
+			break;
+		}
+	}
+
+	return result;
+}
+
 HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 {
 	// We only accept video and text
 	if (mtIn->majortype == MEDIATYPE_Video)
 	{
 		// Check to see if the video subtype is one of the supported subtypes
+		GUID subtype = mtIn->subtype;
 		for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT; i++)
 		{
-			if (mtIn->subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[i])
+			if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[i])
 			{
 				return S_OK;
 			}
@@ -92,7 +127,7 @@ HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 
 		for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT; i++)
 		{
-			if (mtIn->subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[i])
+			if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[i])
 			{
 				return S_OK;
 			}
@@ -113,7 +148,48 @@ HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 
 HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* mtOut)
 {
-	return S_OK;
+	// Don't know if this check is necessary
+	if (mtIn->majortype == MEDIATYPE_Video)
+	{
+		// If the input matches the output, we automatically accept
+		if (*mtIn == *mtOut)
+		{
+			return S_OK;
+		}
+		else
+		{
+			// We check to see if we're going from 10/16-bit input to 8-bit output
+			if (CheckVideoSubtypeIs16Bit(mtIn) && CheckVideoSubtypeIs8Bit(mtOut))
+			{
+				// Force upstream to reconnect with the same proposed format as the output
+				if (SUCCEEDED(m_pInput->QueryAccept(mtOut)))
+				{
+					if (SUCCEEDED(ReconnectPin(m_pInput, mtOut)))
+					{
+						m_pInput->SetMediaType(mtOut);
+						
+						return S_OK;
+					}
+					else
+					{
+						return VFW_E_TYPE_NOT_ACCEPTED;
+					}
+				}
+				else
+				{
+					// If upstream doesn't accept the output format, much sadness occurs :(
+					return VFW_E_TYPE_NOT_ACCEPTED;
+				}
+			}
+			else
+			{
+				// Don't know what's going on at this point, but it doesn't matter because we don't
+				// want it
+				return VFW_E_TYPE_NOT_ACCEPTED;
+			}
+		}
+	}
+	return VFW_E_TYPE_NOT_ACCEPTED;
 }
 
 HRESULT CDXSubFilter::DecideBufferSize(IMemAllocator * pAllocator, ALLOCATOR_PROPERTIES *pprop)
@@ -132,17 +208,7 @@ HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 		// In the special case of 10/16-bit input, we will offer 8-bit formats as output so that
 		// we can force the video decoder to output in 8-bit if the video renderer can't accept 
 		// 10/16-bit input. Otherwise, we only offer the input media type as an output type.
-		bool bInputIs16Bit = false;
-		for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT; i++)
-		{
-			if (m_InputVideoType.subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[i])
-			{
-				bInputIs16Bit = true;
-				break;
-			}
-		}
-
-		if (bInputIs16Bit)
+		if (CheckVideoSubtypeIs16Bit(&m_InputVideoType))
 		{
 			// Try input format first
 			if (iPosition == 0)

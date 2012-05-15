@@ -86,5 +86,11 @@ namespace DXSubFilter
 
 	private:
 		static const int m_iPinCount = 3;
+
+		// Returns true if the passed in MediaType is one of the 8-bit video types
+		bool CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType);
+
+		// Returns true if the passed in MediaType is one of the 10/16-bit video types
+		bool CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType);
 	};
 };

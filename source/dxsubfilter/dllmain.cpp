@@ -98,26 +98,6 @@ int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 
 //------------------------------------------------------------------------------
-//	DLL Entry Point	for normal DLLs.
-BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
-					 )
-{
-	switch (ul_reason_for_call)
-	{
-	case DLL_PROCESS_ATTACH:
-		break;
-	case DLL_THREAD_ATTACH:
-		break;
-	case DLL_THREAD_DETACH:
-		break;
-	case DLL_PROCESS_DETACH:
-		break;
-	}
-	return TRUE;
-}
-
 // The following functions are actually defined in BaseClasses, but we need to give their
 // function signature here so we can call them correctly.
 extern "C" void __cdecl __security_init_cookie(void);
@@ -139,6 +119,31 @@ DllEntryPoint(
     }
 
     return _DllEntryPoint(hInstance, ulReason, pv);
+}
+
+//	DLL Entry Point	for normal DLLs.
+BOOL APIENTRY DllMain( HMODULE hModule,
+                       DWORD  ul_reason_for_call,
+                       LPVOID lpReserved
+					 )
+{
+	switch (ul_reason_for_call)
+	{
+	case DLL_PROCESS_ATTACH:
+		break;
+	case DLL_THREAD_ATTACH:
+		break;
+	case DLL_THREAD_DETACH:
+		break;
+	case DLL_PROCESS_DETACH:
+		break;
+	}
+
+	// Microsoft DirectShow fail: DllMain is actually called by RegSvr32, but we need to run 
+	// DllEntryPoint to run the proper DirectShow specific stuff. Consequently, we need to 
+	// manually call DllEntryPoint ourselves. This solves the problem of our filter registering
+	// incorrectly as RegSvr32.exe instead of itself.
+	return DllEntryPoint(reinterpret_cast<HINSTANCE>(hModule), ul_reason_for_call, lpReserved);
 }
 
 //------------------------------------------------------------------------------

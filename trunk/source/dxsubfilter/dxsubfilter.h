@@ -69,15 +69,22 @@ namespace DXSubFilter
 		// Called when upstream filter decides what media type to pass into us
 		virtual HRESULT SetMediaType(PIN_DIRECTION direction,const CMediaType *pmt);
 
+		// Override because CTransformFilter only has 2 pins, but we have 3
+		virtual int GetPinCount();
+		virtual CBasePin* GetPin(int n);
+
 	protected:
 		// We use m_pInput inherited from CTransformFilter for our video input so we use a second
 		// pin to accept text subtitle data.
-		CTransformInputPin* m_pInputSubtitle;
+		CTransformInputPin* m_pInputSubtitlePin;
 
 		// Save the video format that upstream decided on so we can pass the same format downstream.
 		// We will not perform any video format conversions. However, in the special case of 
 		// 10/16-bit input, we will offer 8-bit formats as output so that we can force the video
 		// decoder to output in 8-bit if the video renderer can't accept 10/16-bit input.
 		CMediaType m_InputVideoType;
+
+	private:
+		static const int m_iPinCount = 3;
 	};
 };

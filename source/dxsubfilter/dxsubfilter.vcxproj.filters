@@ -30,6 +30,9 @@
     <ClInclude Include="dxsubfilter_uuids.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="registryhelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -42,6 +45,9 @@
       <Filter>pch</Filter>
     </ClCompile>
     <ClCompile Include="dxsubfilter_uuids.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="registryhelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -17,6 +17,7 @@
 
 namespace DXSubFilter
 {
+	// Supported video types
 	static const GUID DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[] = {
 		MEDIASUBTYPE_AYUV,	// Packed 4:4:4
 		MEDIASUBTYPE_YUY2,	// Packed 4:2:2
@@ -36,6 +37,9 @@ namespace DXSubFilter
 	static const size_t DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT = 
 						ARRAYSIZE(DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT);
 
+	// Forward declarations
+	class CSubtitleInputPin;
+
 	class __declspec(uuid("3B6ED1B8-ECF6-422A-8F07-48980E6482CE")) CDXSubFilter : public CTransformFilter
 	{
 	public: // Functions
@@ -48,7 +52,8 @@ namespace DXSubFilter
 		// CTransformFilter overrides
 		//===================================================
 
-		// Perform transform
+		// Perform transform. Note that this only handles the overlaying of the subtitle onto
+		// the video frame. Subtitle data is received and processed internally in CSubtitleInputPin
 		virtual HRESULT Transform(IMediaSample * pIn, IMediaSample *pOut);
 
 		// Check if we can support mtIn
@@ -61,7 +66,9 @@ namespace DXSubFilter
 		// support
 		virtual HRESULT CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin);
 
-		// Call the SetProperties function with appropriate arguments
+		// Decide the buffer size to be allocated by downstream filter. This is only called by
+		// the output pin as the input pin just accepts the allocator and allocator properties
+		// decided by the upstream filter.
 		virtual HRESULT DecideBufferSize(
 							IMemAllocator * pAllocator,
 							ALLOCATOR_PROPERTIES *pProp);
@@ -79,7 +86,7 @@ namespace DXSubFilter
 	protected:
 		// We use m_pInput inherited from CTransformFilter for our video input so we use a second
 		// pin to accept text subtitle data.
-		CTransformInputPin* m_pInputSubtitlePin;
+		CSubtitleInputPin* m_pInputSubtitlePin;
 
 		// Save the video format that upstream decided on so we can pass the same format downstream.
 		// We will not perform any video format conversions. However, in the special case of 

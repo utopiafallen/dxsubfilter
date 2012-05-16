@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 #include "dxsubfilter.h"
+#include "SubtitleInputPin.h"
 
 using namespace DXSubFilter;
 
@@ -63,7 +64,7 @@ CBasePin* CDXSubFilter::GetPin(int n)
 	case 2:
 		if (!m_pInputSubtitlePin)
 		{
-			m_pInputSubtitlePin = new CTransformInputPin(L"Subtitle", this, &hr, L"Subtitle");
+			m_pInputSubtitlePin = new CSubtitleInputPin(L"Subtitle", this, &hr, L"Subtitle");
 
 			if (FAILED(hr))
 			{
@@ -112,7 +113,7 @@ bool CDXSubFilter::CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType)
 
 HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 {
-	// We only accept video and text. 
+	// We only accept video. CSubtitleInputPin handles checking for subtitle data.
 	if (mtIn->majortype == MEDIATYPE_Video)
 	{
 		// Check to see if the video subtype is one of the supported subtypes
@@ -136,10 +137,6 @@ HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 		// Not a supported subtype so fail
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
-	else if (mtIn->majortype == MEDIATYPE_Text || mtIn->majortype == MEDIATYPE_Subtitle)
-	{
-		return S_OK;
-	}
 	else
 	{
 		return VFW_E_TYPE_NOT_ACCEPTED;
@@ -148,7 +145,8 @@ HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 
 HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* mtOut)
 {
-	// Don't know if this check is necessary
+	// This should only be called by the video input pin (m_pInput). The subtitle input pin
+	// handles everything internally.
 	if (mtIn->majortype == MEDIATYPE_Video)
 	{
 		// If the input matches the output, we automatically accept
@@ -172,11 +170,6 @@ HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* m
 				return VFW_E_TYPE_NOT_ACCEPTED;
 			}
 		}
-	}
-	else if (mtIn->majortype == MEDIATYPE_Subtitle || mtIn->majortype == MEDIATYPE_Text)
-	{
-		// Always accept subtitle input
-		return S_OK;
 	}
 	else
 	{
@@ -343,6 +336,33 @@ HRESULT CDXSubFilter::SetMediaType(PIN_DIRECTION direction,const CMediaType *pmt
 
 HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 {
+	BYTE* pBufferIn, *pBufferOut;
+	long lBufferLength;
+	HRESULT hr;
+
+	// Get input buffer and size
+	hr = pIn->GetPointer(&pBufferIn);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+	lBufferLength = pIn->GetActualDataLength();
+
+	// Get output buffer
+	hr = pOut->GetPointer(&pBufferOut);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	// Copy data to output buffer. CTransformFilter will have already allocated pOut using the
+	// downstream filter's memory allocator so we SHOULD be able to just copy the data
+	memcpy(pBufferOut, pBufferIn, lBufferLength);
+
+	// Get subtitle data and overlay onto video frame. Or maybe pass in raw video data into 
+	// subtitle rendering core and let it do the overlaying? We'll see... (NB: Use output buffer
+	// video data)
+
 	return S_OK;
 }
 

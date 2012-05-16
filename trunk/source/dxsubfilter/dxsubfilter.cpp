@@ -167,7 +167,10 @@ HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* m
 					if (SUCCEEDED(ReconnectPin(m_pInput, mtOut)))
 					{
 						m_pInput->SetMediaType(mtOut);
-						
+
+						// Update the fact that we've reconnected the input on a new format
+						m_InputVideoType = *mtOut;
+
 						return S_OK;
 					}
 					else
@@ -189,7 +192,7 @@ HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* m
 			}
 		}
 	}
-	else if (mtIn->majortype == MEDIATYPE_Subtitle)
+	else if (mtIn->majortype == MEDIATYPE_Subtitle || mtIn->majortype == MEDIATYPE_Text)
 	{
 		// Always accept subtitle input
 		return S_OK;
@@ -242,8 +245,6 @@ HRESULT CDXSubFilter::DecideBufferSize(IMemAllocator * pAllocator, ALLOCATOR_PRO
 		}
 	}
 	FreeMediaType(mt);
-
-	OutputDebugString(L"Hello\n");
 
 	return hr;
 }

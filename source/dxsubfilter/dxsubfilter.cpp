@@ -189,19 +189,72 @@ HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* m
 			}
 		}
 	}
-	return VFW_E_TYPE_NOT_ACCEPTED;
+	else if (mtIn->majortype == MEDIATYPE_Subtitle)
+	{
+		// Always accept subtitle input
+		return S_OK;
+	}
+	else
+	{
+		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
 }
 
-HRESULT CDXSubFilter::DecideBufferSize(IMemAllocator * pAllocator, ALLOCATOR_PROPERTIES *pprop)
+HRESULT CDXSubFilter::DecideBufferSize(IMemAllocator * pAllocator, ALLOCATOR_PROPERTIES *pProp)
 {
-	return S_OK;
+	// Our input and output formats should always match so we don't really need to do anything
+	// special for the downstream allocator settings
+	AM_MEDIA_TYPE mt;
+	HRESULT hr = m_pOutput->ConnectionMediaType(&mt);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	// Check to make sure input and output types match. This check should never fail, but who knows...
+	if (mt.subtype != m_InputVideoType.subtype)
+	{
+		hr = E_FAIL;
+	}
+	else
+	{
+		// Set desired allocator properties
+		if (pProp->cBuffers == 0)
+		{
+			pProp->cBuffers = 1;
+		}
+
+		ALLOCATOR_PROPERTIES Actual;
+		hr = pAllocator->SetProperties(pProp, &Actual);
+		if (FAILED(hr))
+		{
+			return hr;
+		}
+
+		// Check to make sure the actual results match the desired results
+		if (pProp->cbBuffer > Actual.cbBuffer)
+		{
+			hr = E_FAIL;
+		}
+		else
+		{
+			hr = S_OK;
+		}
+	}
+	FreeMediaType(mt);
+
+	OutputDebugString(L"Hello\n");
+
+	return hr;
 }
 
 HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 {
+	HRESULT hr = S_OK;
+
 	if (iPosition < 0)
 	{
-		return E_INVALIDARG;
+		hr = E_INVALIDARG;
 	}
 	else if (m_pInput->IsConnected() == TRUE)
 	{
@@ -217,7 +270,7 @@ HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 			}
 			else if (iPosition > DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT)
 			{
-				return VFW_S_NO_MORE_ITEMS;
+				hr = VFW_S_NO_MORE_ITEMS;
 			}
 			else
 			{
@@ -227,14 +280,22 @@ HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 		}
 		else
 		{
-			*pMediaType = m_InputVideoType;
+			if (iPosition == 0)
+			{
+				*pMediaType = m_InputVideoType;
+			}
+			else
+			{
+				hr = VFW_S_NO_MORE_ITEMS;
+			}
 		}
-		return S_OK;
 	}
 	else
 	{
-		return VFW_S_NO_MORE_ITEMS;
+		hr = VFW_S_NO_MORE_ITEMS;
 	}
+
+	return hr;
 }
 
 HRESULT CDXSubFilter::SetMediaType(PIN_DIRECTION direction,const CMediaType *pmt)

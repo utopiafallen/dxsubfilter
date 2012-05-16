@@ -21,7 +21,6 @@ namespace DXSubFilter
 		MEDIASUBTYPE_AYUV,	// Packed 4:4:4
 		MEDIASUBTYPE_YUY2,	// Packed 4:2:2
 		MEDIASUBTYPE_YV12,	// Planar 4:2:0
-		MEDIASUBTYPE_NV12,	// Planar/Packed 4:2:0
 	};
 
 	static const GUID DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[] = {
@@ -57,6 +56,10 @@ namespace DXSubFilter
 
 		// Check if we can support the transform from this input to this output
 		virtual HRESULT CheckTransform(const CMediaType* mtIn, const CMediaType* mtOut);
+
+		// We override this so that we can perform additional checking related to 10/16-bit
+		// support
+		virtual HRESULT CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin);
 
 		// Call the SetProperties function with appropriate arguments
 		virtual HRESULT DecideBufferSize(

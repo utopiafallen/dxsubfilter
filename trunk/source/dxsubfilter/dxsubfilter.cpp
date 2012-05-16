@@ -112,7 +112,7 @@ bool CDXSubFilter::CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType)
 
 HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 {
-	// We only accept video and text
+	// We only accept video and text. 
 	if (mtIn->majortype == MEDIATYPE_Video)
 	{
 		// Check to see if the video subtype is one of the supported subtypes
@@ -158,31 +158,12 @@ HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* m
 		}
 		else
 		{
-			// We check to see if we're going from 10/16-bit input to 8-bit output
+			// We check to see if we're going from 10/16-bit input to 8-bit output. If so, we allow it
+			// and then during CompleteConnect, we will force upstream to reconnect with the final output
+			// format
 			if (CheckVideoSubtypeIs16Bit(mtIn) && CheckVideoSubtypeIs8Bit(mtOut))
 			{
-				// Force upstream to reconnect with the same proposed format as the output
-				if (SUCCEEDED(m_pInput->QueryAccept(mtOut)))
-				{
-					if (SUCCEEDED(ReconnectPin(m_pInput, mtOut)))
-					{
-						m_pInput->SetMediaType(mtOut);
-
-						// Update the fact that we've reconnected the input on a new format
-						m_InputVideoType = *mtOut;
-
-						return S_OK;
-					}
-					else
-					{
-						return VFW_E_TYPE_NOT_ACCEPTED;
-					}
-				}
-				else
-				{
-					// If upstream doesn't accept the output format, much sadness occurs :(
-					return VFW_E_TYPE_NOT_ACCEPTED;
-				}
+				return S_OK;
 			}
 			else
 			{
@@ -200,6 +181,47 @@ HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* m
 	else
 	{
 		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
+}
+
+HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin)
+{
+	if (direction == PINDIR_OUTPUT)
+	{
+		CMediaType mtOut = m_pOutput->CurrentMediaType();
+		if (mtOut != m_pInput->CurrentMediaType())
+		{
+			// Force upstream to reconnect with the same proposed format as the output
+			if (SUCCEEDED(m_pInput->QueryAccept(&mtOut)))
+			{
+				if (SUCCEEDED(ReconnectPin(m_pInput, &mtOut)))
+				{
+					m_pInput->SetMediaType(&mtOut);
+
+					// Update the fact that we've reconnected the input on a new format
+					m_InputVideoType = mtOut;
+
+					return S_OK;
+				}
+				else
+				{
+					return VFW_E_TYPE_NOT_ACCEPTED;
+				}
+			}
+			else
+			{
+				// If upstream doesn't accept the output format, much sadness occurs :(
+				return VFW_E_TYPE_NOT_ACCEPTED;
+			}
+		}
+		else
+		{
+			return S_OK;
+		}
+	}
+	else
+	{
+		return S_OK;
 	}
 }
 
@@ -276,6 +298,7 @@ HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 			else
 			{
 				// Subtract 1 from iPosition because iPosition == 0 is used for input format.
+				pMediaType->SetType(&MEDIATYPE_Video);
 				pMediaType->SetSubtype(&DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[iPosition-1]);
 			}
 		}

@@ -11,6 +11,10 @@
 // Windows Header Files:
 #include <windows.h>
 
+// STL
+#include <string>
+
 // DirectShow
 #include <DShow.h>
 #include "streams.h"
+

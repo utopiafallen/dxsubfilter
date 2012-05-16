@@ -61,7 +61,7 @@ namespace DXSubFilter
 		// Call the SetProperties function with appropriate arguments
 		virtual HRESULT DecideBufferSize(
 							IMemAllocator * pAllocator,
-							ALLOCATOR_PROPERTIES *pprop);
+							ALLOCATOR_PROPERTIES *pProp);
 
 		// Suggest OUTPUT pin media types
 		virtual HRESULT GetMediaType(int iPosition, CMediaType *pMediaType);

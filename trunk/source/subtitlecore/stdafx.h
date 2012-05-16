@@ -27,3 +27,10 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <tuple>
+
+// Boost
+#include <boost/circular_buffer.hpp>
+#include <boost/multi_array.hpp>
+#include <boost/multi_index_container.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/tokenizer.hpp>

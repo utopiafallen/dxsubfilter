@@ -51,5 +51,6 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 
 	// The sample should just be a single line of subtitle data
 	std::string s(reinterpret_cast<char*>(pBufferIn));
+
 	return S_OK;
 }

@@ -16,5 +16,6 @@
 
 // DirectShow
 #include <DShow.h>
+#include <dvdmedia.h>
 #include "streams.h"
 

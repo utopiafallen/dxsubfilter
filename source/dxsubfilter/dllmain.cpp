@@ -103,6 +103,11 @@ int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 extern "C" void __cdecl __security_init_cookie(void);
 extern "C" BOOL WINAPI _DllEntryPoint(HINSTANCE, ULONG, __inout_opt LPVOID);
 
+// Used to determine what the purpose was of loading the DLL so we can correctly perform the
+// desired registry operations.
+enum REASON_FOR_ENTRY { REGISTERING, UNREGISTERING, NORMAL };
+REASON_FOR_ENTRY g_ReasonForEntry = NORMAL;
+
 // DLL Entry Point for DirectShow filters.
 DECLSPEC_NOINLINE
 BOOL 
@@ -139,6 +144,23 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 		break;
 	}
 
+	// We perform registry operations here because we use HKCU to store our configuration data,
+	// which means multiple user accounts can have different configuration settings for the filter.
+	// Doing it in DllRegister/Unregister would only take effect when the filter was initially 
+	// registered.
+	if (g_ReasonForEntry == UNREGISTERING)
+	{
+		DXSubFilter::RemoveFilterConfigurationDataFromRegistry();
+	}
+	else
+	{
+		if (DXSubFilter::LoadFilterConfigurationFromRegistry() == false)
+		{
+			DXSubFilter::WriteFilterConfigurationDataToRegistry();
+			DXSubFilter::LoadFilterConfigurationFromRegistry();
+		}
+	}
+
 	// Microsoft DirectShow fail: DllMain is actually called by RegSvr32, but we need to run 
 	// DllEntryPoint to run the proper DirectShow specific stuff. Consequently, we need to 
 	// manually call DllEntryPoint ourselves. This solves the problem of our filter registering
@@ -156,13 +178,13 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
 STDAPI DllRegisterServer()
 {
-	DXSubFilter::WriteFilterConfigurationDataToRegistry();
+	g_ReasonForEntry = REGISTERING;
 	return AMovieDllRegisterServer2(TRUE);
 }
 
 STDAPI DllUnregisterServer()
 {
-	DXSubFilter::RemoveFilterConfigurationDataFromRegistry();
-	return AMovieDllRegisterServer2(FALSE);
+	g_ReasonForEntry = UNREGISTERING;
+	return AMovieDllRegisterServer2(FALSE);;
 }
 

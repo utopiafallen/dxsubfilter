@@ -145,31 +145,13 @@ HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 
 HRESULT CDXSubFilter::CheckTransform(const CMediaType* mtIn, const CMediaType* mtOut)
 {
-	// This should only be called by the video input pin (m_pInput). The subtitle input pin
+	// This should only be called by the video input/output pins. The subtitle input pin
 	// handles everything internally.
 	if (mtIn->majortype == MEDIATYPE_Video)
 	{
-		// If the input matches the output, we automatically accept
-		if (*mtIn == *mtOut)
-		{
-			return S_OK;
-		}
-		else
-		{
-			// We check to see if we're going from 10/16-bit input to 8-bit output. If so, we allow it
-			// and then during CompleteConnect, we will force upstream to reconnect with the final output
-			// format
-			if (CheckVideoSubtypeIs16Bit(mtIn) && CheckVideoSubtypeIs8Bit(mtOut))
-			{
-				return S_OK;
-			}
-			else
-			{
-				// Don't know what's going on at this point, but it doesn't matter because we don't
-				// want it
-				return VFW_E_TYPE_NOT_ACCEPTED;
-			}
-		}
+		// Accept all combinations of our supported video formats for input/output. We will force
+		// upstream to reconnect during the CompleteConnect call if the formats don't match.
+		return S_OK;
 	}
 	else
 	{
@@ -220,48 +202,61 @@ HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin
 
 HRESULT CDXSubFilter::DecideBufferSize(IMemAllocator * pAllocator, ALLOCATOR_PROPERTIES *pProp)
 {
-	// Our input and output formats should always match so we don't really need to do anything
-	// special for the downstream allocator settings
-	AM_MEDIA_TYPE mt;
-	HRESULT hr = m_pOutput->ConnectionMediaType(&mt);
-	if (FAILED(hr))
+	if (m_pInput->IsConnected() == false)
 	{
-		return hr;
-	}
-
-	// Check to make sure input and output types match. This check should never fail, but who knows...
-	if (mt.subtype != m_InputVideoType.subtype)
-	{
-		hr = E_FAIL;
+		return E_UNEXPECTED;
 	}
 	else
 	{
-		// Set desired allocator properties
-		if (pProp->cBuffers == 0)
-		{
-			pProp->cBuffers = 1;
-		}
-
-		ALLOCATOR_PROPERTIES Actual;
-		hr = pAllocator->SetProperties(pProp, &Actual);
+		// Our input and output formats should always match so we don't really need to do anything
+		// special for the downstream allocator settings
+		AM_MEDIA_TYPE mt;
+		HRESULT hr = m_pOutput->ConnectionMediaType(&mt);
 		if (FAILED(hr))
 		{
 			return hr;
 		}
 
-		// Check to make sure the actual results match the desired results
-		if (pProp->cbBuffer > Actual.cbBuffer)
+		// Check to make sure input and output types match. This check should never fail, but who knows...
+		if (mt.subtype != m_InputVideoType.subtype)
 		{
 			hr = E_FAIL;
 		}
 		else
 		{
-			hr = S_OK;
-		}
-	}
-	FreeMediaType(mt);
+			// Set desired allocator properties
+		
+			// Size in bytes of each buffer
+			ASSERT(mt.formattype == FORMAT_VideoInfo2);
+			pProp->cbBuffer = DIBSIZE(reinterpret_cast<VIDEOINFOHEADER2*>(mt.pbFormat)->bmiHeader);
+		
+			// Number of buffers
+			if (pProp->cBuffers == 0)
+			{
+				pProp->cBuffers = 1;
+			}
 
-	return hr;
+			ALLOCATOR_PROPERTIES Actual;
+			hr = pAllocator->SetProperties(pProp, &Actual);
+			if (FAILED(hr))
+			{
+				return hr;
+			}
+
+			// Check to make sure the actual results match the desired results
+			if (pProp->cbBuffer > Actual.cbBuffer)
+			{
+				hr = E_FAIL;
+			}
+			else
+			{
+				hr = S_OK;
+			}
+		}
+		FreeMediaType(mt);
+
+		return hr;
+	}
 }
 
 HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
@@ -274,36 +269,57 @@ HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 	}
 	else if (m_pInput->IsConnected() == TRUE)
 	{
-		// In the special case of 10/16-bit input, we will offer 8-bit formats as output so that
-		// we can force the video decoder to output in 8-bit if the video renderer can't accept 
-		// 10/16-bit input. Otherwise, we only offer the input media type as an output type.
-		if (CheckVideoSubtypeIs16Bit(&m_InputVideoType))
+		// Expose all the supported formats. During CompleteConnect, we will force upstream to 
+		// reconnect with the format chosen by downstream since most video decoders are able to
+		// output all the inputs we accept, but not all video renderers are able to accept all
+		// the formats we accept. This is basically for VMR/EVR compatibility, which rely on 
+		// Direct3D video surfaces, which is dependant upon GPU.
+		pMediaType->SetType(&MEDIATYPE_Video);
+
+		// Try input format first
+		if (iPosition == 0)
 		{
-			// Try input format first
-			if (iPosition == 0)
-			{
-				*pMediaType = m_InputVideoType;
-			}
-			else if (iPosition > DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT)
-			{
-				hr = VFW_S_NO_MORE_ITEMS;
-			}
-			else
-			{
-				// Subtract 1 from iPosition because iPosition == 0 is used for input format.
-				pMediaType->SetType(&MEDIATYPE_Video);
-				pMediaType->SetSubtype(&DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[iPosition-1]);
-			}
+			*pMediaType = m_InputVideoType;
 		}
 		else
 		{
-			if (iPosition == 0)
+			// Subtract 1 because 0 is used to return our stored input media type
+			int index = iPosition - 1; 
+
+			// If we have 10/16-bit input, expose those as output first.
+			if (CheckVideoSubtypeIs16Bit(&m_InputVideoType))
 			{
-				*pMediaType = m_InputVideoType;
+				if (index < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT)
+				{
+					pMediaType->subtype = DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[index];
+				}
+				else
+				{
+					// Gone through all the 10/16-bit formats, now check 8-bit
+					index = index - DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT;
+
+					if (index < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT)
+					{
+						pMediaType->subtype = DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[index];
+					}
+					else
+					{
+						// Out of items
+						hr = VFW_S_NO_MORE_ITEMS;
+					}
+				}
 			}
-			else
+			else	// 8-bit input
 			{
-				hr = VFW_S_NO_MORE_ITEMS;
+				if (index < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT)
+				{
+					pMediaType->subtype = DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[index];
+				}
+				else
+				{
+					// Out of items
+					hr = VFW_S_NO_MORE_ITEMS;
+				}
 			}
 		}
 	}
@@ -358,6 +374,8 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	// Copy data to output buffer. CTransformFilter will have already allocated pOut using the
 	// downstream filter's memory allocator so we SHOULD be able to just copy the data
 	memcpy(pBufferOut, pBufferIn, lBufferLength);
+
+	pOut->SetActualDataLength(lBufferLength);
 
 	// Get subtitle data and overlay onto video frame. Or maybe pass in raw video data into 
 	// subtitle rendering core and let it do the overlaying? We'll see... (NB: Use output buffer

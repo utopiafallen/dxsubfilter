@@ -17,11 +17,12 @@
 
 namespace DXSubFilter
 {
-	// Supported video types
+	// Supported video types. Note that the ordering matters as this is the order formats are
+	// exposed for connection
 	static const GUID DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[] = {
-		MEDIASUBTYPE_AYUV,	// Packed 4:4:4
 		MEDIASUBTYPE_YUY2,	// Packed 4:2:2
 		MEDIASUBTYPE_YV12,	// Planar 4:2:0
+		MEDIASUBTYPE_AYUV,	// Packed 4:4:4
 	};
 
 	static const GUID DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[] = {

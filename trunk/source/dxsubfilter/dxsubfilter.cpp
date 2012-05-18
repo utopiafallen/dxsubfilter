@@ -13,6 +13,11 @@ CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk)
 	: CTransformFilter(DXSUBFILTER_NAME, pUnk, CLSID_DXSubFilter)
 	, m_pInputSubtitlePin(nullptr)
 	, m_pAlignedBuffer(nullptr)
+	, m_uAlignedBufferLength(0)
+	, m_InputStrideY(0)
+	, m_InputStrideUV(0)
+	, m_OutputStrideUV(0)
+	, m_OutputStrideY(0)
 {
 	// Just in case the CTransformFilter constructor doesn't default these to null
 	m_pInput = nullptr;

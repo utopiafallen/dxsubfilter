@@ -24,6 +24,10 @@ namespace DXSubFilter
 		// receive video data.
 		HRESULT CheckMediaType(const CMediaType* mtIn);
 
+		// Set the media type for this connection. Upstream calls it. Overridden because we
+		// don't want to call CheckInputType on the transform filter.
+		HRESULT SetMediaType(const CMediaType* mtIn);
+
 		// Here's the next block of data from the stream.
 		// AddRef it yourself if you need to hold it beyond the end
 		// of this call. We override this because CTransformInputPin's Receive will call 

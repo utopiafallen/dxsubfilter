@@ -459,7 +459,18 @@ void CDXSubFilter::CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActua
 	bool b16BitVideo = CheckVideoSubtypeIs16Bit(&m_InputVideoType);
 	if (b16BitVideo)
 	{
-		// TODO: Finish this
+		// All the PXXX formats have Y on its own plane and then UV interleaved in the same plane
+		// (which means the UV plane has the same stride as Y plane) so all we need to do is to
+		// copy all the rows over while accounting for output stride padding.
+		inputRows = srcActualDataLength / m_InputStrideY;
+
+		for (size_t i = 0; i < inputRows; i++)
+		{
+			BYTE* pDest = pBufferOut + m_OutputStrideY * i;
+			BYTE* pSrc = pBufferIn + m_InputStrideY * i;
+
+			memcpy(pDest, pSrc, m_InputStrideY);
+		}
 	}
 	else
 	{
@@ -529,11 +540,9 @@ void CDXSubFilter::ComputeStrides()
 		m_InputStrideY = bmiIn.biWidth * 2;
 		m_OutputStrideY = bmiOut.biWidth * 2;
 
-		// UV stride is half of Y stride
-		m_InputStrideUV = bmiIn.biWidth;
-		m_OutputStrideUV = bmiOut.biWidth;
-
-		// TODO: Finish this
+		// Since UV is interleaved in the same plane, it has the same stride as the Y plane
+		m_InputStrideUV = m_InputStrideY;
+		m_OutputStrideUV = m_OutputStrideY;
 	}
 	else
 	{

@@ -7,6 +7,10 @@
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 
+// SSE intrinsics
+#include <emmintrin.h>
+#include <xmmintrin.h>
+
 // Direct2D
 #include "D2D1.h"
 #include "D2D1Helper.h"

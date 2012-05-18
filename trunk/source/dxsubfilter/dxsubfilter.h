@@ -100,6 +100,12 @@ namespace DXSubFilter
 		size_t m_InputStrideY, m_InputStrideUV;
 		size_t m_OutputStrideY, m_OutputStrideUV;
 
+		// Aligned buffer to copy input sample to. Being aligned will make SSE2 processing easier
+		// and since the input sample size won't change (I don't think), we can allocate once
+		// and re-use.
+		BYTE* m_pAlignedBuffer;
+		size_t m_uAlignedBufferLength;
+
 	protected: // Functions
 
 		// This is a single massive function that will handle properly blitting video data
@@ -116,16 +122,18 @@ namespace DXSubFilter
 		// Should be called every time the input or output media types changes.
 		void ComputeStrides();
 
+		// Returns true if the passed in MediaType is one of the 8-bit video types
+		bool CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType);
+
+		// Returns true if the passed in MediaType is one of the 10/16-bit video types
+		bool CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType);
+
 	private: // Data
 
 		static const int m_iPinCount = 3;
 
 	private: // Functions
 
-		// Returns true if the passed in MediaType is one of the 8-bit video types
-		bool CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType);
-
-		// Returns true if the passed in MediaType is one of the 10/16-bit video types
-		bool CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType);
+		
 	};
 };

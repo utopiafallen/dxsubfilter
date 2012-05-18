@@ -24,6 +24,9 @@ CDXSubFilter::~CDXSubFilter()
 	delete m_pInputSubtitlePin;
 }
 
+//------------------------------------------------------------------------------
+// DirectShow related overrides
+
 CUnknown* CDXSubFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 {
 	return new CDXSubFilter(pUnk);
@@ -75,40 +78,6 @@ CBasePin* CDXSubFilter::GetPin(int n)
 	default:
 		return nullptr;
 	}
-}
-
-bool CDXSubFilter::CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType)
-{
-	bool result = false;
-
-	GUID subtype = pMediaType->subtype;
-	for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT; i++)
-	{
-		if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[i])
-		{
-			result = true;
-			break;
-		}
-	}
-
-	return result;
-}
-
-bool CDXSubFilter::CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType)
-{
-	bool result = false;
-
-	GUID subtype = pMediaType->subtype;
-	for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT; i++)
-	{
-		if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[i])
-		{
-			result = true;
-			break;
-		}
-	}
-
-	return result;
 }
 
 HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
@@ -352,9 +321,36 @@ HRESULT CDXSubFilter::SetMediaType(PIN_DIRECTION direction,const CMediaType *pmt
 
 HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 {
+	HRESULT hr;
+
 	BYTE* pBufferIn, *pBufferOut;
 	long lBufferLength;
-	HRESULT hr;
+
+	// Check for a format change. If the actual video type is changed during playback, we're
+	// totally screwed because we can't handle that. However, it's possible that the stride
+	// of the allocated sample changed, in which case we need to account for that.
+	AM_MEDIA_TYPE* pmt = nullptr;
+	hr = pOut->GetMediaType(&pmt);
+	if (hr == S_OK)
+	{
+		CMediaType mt(*pmt);
+		m_pOutput->SetMediaType(&mt);
+		DeleteMediaType(pmt);
+
+		ComputeStrides();
+	}
+
+	hr = pIn->GetMediaType(&pmt);
+	if (hr == S_OK)
+	{
+		CMediaType mt(*pmt);
+		m_pInput->SetMediaType(&mt);
+		DeleteMediaType(pmt);
+
+		ComputeStrides();
+	}
+
+	ASSERT(m_pInput->CurrentMediaType().subtype == m_pOutput->CurrentMediaType().subtype);
 
 	// Get input buffer and size
 	hr = pIn->GetPointer(&pBufferIn);
@@ -371,16 +367,172 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 		return hr;
 	}
 
-	// Copy data to output buffer. CTransformFilter will have already allocated pOut using the
-	// downstream filter's memory allocator so we SHOULD be able to just copy the data
-	memcpy(pBufferOut, pBufferIn, lBufferLength);
-
-	pOut->SetActualDataLength(lBufferLength);
-
 	// Get subtitle data and overlay onto video frame. Or maybe pass in raw video data into 
 	// subtitle rendering core and let it do the overlaying? We'll see... (NB: Use output buffer
 	// video data)
 
+	// Copy buffer to output
+	CopyBuffer(pBufferIn, pBufferOut, lBufferLength);
+
+	//pOut->SetActualDataLength(lBufferLength);
+
 	return S_OK;
 }
+//------------------------------------------------------------------------------
 
+
+//------------------------------------------------------------------------------
+// These are all the non-DirectShow related functions
+
+bool CDXSubFilter::CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType)
+{
+	bool result = false;
+
+	GUID subtype = pMediaType->subtype;
+	for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT; i++)
+	{
+		if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[i])
+		{
+			result = true;
+			break;
+		}
+	}
+
+	return result;
+}
+
+bool CDXSubFilter::CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType)
+{
+	bool result = false;
+
+	GUID subtype = pMediaType->subtype;
+	for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT; i++)
+	{
+		if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[i])
+		{
+			result = true;
+			break;
+		}
+	}
+
+	return result;
+}
+
+void CDXSubFilter::CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActualDataLength)
+{
+	size_t inputRows;
+
+	BITMAPINFOHEADER& bmiIn = reinterpret_cast<VIDEOINFOHEADER2*>(m_InputVideoType.pbFormat)->bmiHeader;
+
+	// Compute input and output strides
+	bool b16BitVideo = CheckVideoSubtypeIs16Bit(&m_InputVideoType);
+	if (b16BitVideo)
+	{
+		// TODO: Finish this
+	}
+	else
+	{
+		// Note to self: Leaving in parallel_for memcpy in case we want to use it later
+
+		// Copy the Y plane. For the packed formats, this will copy all the data we need.
+		for (LONG i = 0; i < bmiIn.biHeight; i++)
+		{
+			BYTE* pDest = pBufferOut + m_OutputStrideY * i;
+			BYTE* pSrc = pBufferIn + m_InputStrideY * i;
+
+			memcpy(pDest, pSrc, m_InputStrideY);
+		}
+
+		//Concurrency::parallel_for(0L, bmiIn.biHeight, [&](LONG i){
+		//	BYTE* pDest = pBufferOut + m_OutputStrideY * i;
+		//	BYTE* pSrc = pBufferIn + m_InputStrideY * i;
+
+		//	memcpy(pDest, pSrc, m_InputStrideY);
+		//});
+
+		inputRows = ((srcActualDataLength / m_InputStrideY) - bmiIn.biHeight) * 2;
+
+		ptrdiff_t dstOffset = m_OutputStrideY * bmiIn.biHeight;
+		ptrdiff_t srcOffset = m_InputStrideY * bmiIn.biHeight;
+
+		// For the packed formats, this for loop won't execute because inputRows will be 0.
+		// For planar formats, this will copy the remaining U and V planes.
+		for (size_t i = 0; i < inputRows; i++)
+		{
+			BYTE* pDest = pBufferOut + dstOffset + m_OutputStrideUV * i;
+			BYTE* pSrc = pBufferIn + srcOffset + m_InputStrideUV * i;
+
+			memcpy(pDest, pSrc, m_InputStrideUV);
+		}
+
+		//Concurrency::parallel_for(0U, inputRows, [&](size_t i){
+		//	BYTE* pDest = pBufferOut + dstOffset + m_OutputStrideUV * i;
+		//	BYTE* pSrc = pBufferIn + srcOffset + m_InputStrideUV * i;
+
+		//	memcpy(pDest, pSrc, m_InputStrideUV);
+		//});
+	}
+}
+
+void CDXSubFilter::ExtractYUV(BYTE* pBufferIn, BYTE* pPlanes[3])
+{
+	//TODO: Finish this
+}
+
+void CDXSubFilter::ComputeStrides()
+{
+	CMediaType& mtOut = m_pOutput->CurrentMediaType();
+	BITMAPINFOHEADER& bmiOut = reinterpret_cast<VIDEOINFOHEADER2*>(mtOut.pbFormat)->bmiHeader;
+
+	BITMAPINFOHEADER& bmiIn = reinterpret_cast<VIDEOINFOHEADER2*>(m_InputVideoType.pbFormat)->bmiHeader;
+
+	// Compute input and output strides
+	bool b16BitVideo = CheckVideoSubtypeIs16Bit(&m_InputVideoType);
+	if (b16BitVideo)
+	{
+		// 2 bytes per pixel. We don't support any packed 10/16-bit formats so this is always true.
+		m_InputStrideY = bmiIn.biWidth * 2;
+		m_OutputStrideY = bmiOut.biWidth * 2;
+
+		// UV stride is half of Y stride
+		m_InputStrideUV = bmiIn.biWidth;
+		m_OutputStrideUV = bmiOut.biWidth;
+
+		// TODO: Finish this
+	}
+	else
+	{
+		if (mtOut.subtype == MEDIASUBTYPE_AYUV)
+		{
+			// Packed 8-bit 4:4:4
+			m_InputStrideY = bmiIn.biWidth * 4;
+			m_OutputStrideY = bmiOut.biWidth * 4;
+		}
+		else if (mtOut.subtype == MEDIASUBTYPE_YUY2)
+		{
+			// Packed 4:2:2
+			m_InputStrideY = bmiIn.biWidth * 2;
+			m_OutputStrideY = bmiOut.biWidth * 2;
+		}
+		else if (mtOut.subtype == MEDIASUBTYPE_YV12)
+		{
+			// Note to self: YV12 is 12bpp because each UV value corresponds to color data for 2x2 pixel
+			// block so each U and V value contribute 1/4 the data to a single pixel i.e. 2-bits from
+			// U and V for a total of 4-bits of data for a pixel. Y is full-res at 8-bits so total bit
+			// depth is 12-bits.
+
+			// Planar 4:2:0
+			m_InputStrideY = bmiIn.biWidth;
+			m_OutputStrideY = bmiOut.biWidth;
+
+			// UV stride is half of Y stride
+			m_InputStrideUV = m_InputStrideY / 2;
+			m_OutputStrideUV = m_OutputStrideY / 2;
+		}
+		else
+		{
+			// Should never reach here
+		}
+	}
+}
+//------------------------------------------------------------------------------

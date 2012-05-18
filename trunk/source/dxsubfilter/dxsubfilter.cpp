@@ -573,6 +573,16 @@ void CDXSubFilter::ComputeStrides()
 			m_InputStrideUV = m_InputStrideY / 2;
 			m_OutputStrideUV = m_OutputStrideY / 2;
 		}
+		else if(mtOut.subtype == MEDIASUBTYPE_NV12)
+		{
+			// Planar 4:2:0
+			m_InputStrideY = bmiIn.biWidth;
+			m_OutputStrideY = bmiOut.biWidth;
+
+			// UV is interleaved into a single plan so it shares the same stride as Y
+			m_InputStrideUV = m_InputStrideY;
+			m_OutputStrideUV = m_OutputStrideY;
+		}
 		else
 		{
 			// Should never reach here

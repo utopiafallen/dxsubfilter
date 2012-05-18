@@ -84,7 +84,8 @@ namespace DXSubFilter
 		virtual int GetPinCount();
 		virtual CBasePin* GetPin(int n);
 
-	protected:
+	protected: // Data
+
 		// We use m_pInput inherited from CTransformFilter for our video input so we use a second
 		// pin to accept text subtitle data.
 		CSubtitleInputPin* m_pInputSubtitlePin;
@@ -95,8 +96,31 @@ namespace DXSubFilter
 		// decoder to output in 8-bit if the video renderer can't accept 10/16-bit input.
 		CMediaType m_InputVideoType;
 
-	private:
+		// Store stride values so we don't have to recompute every time we need to copy
+		size_t m_InputStrideY, m_InputStrideUV;
+		size_t m_OutputStrideY, m_OutputStrideUV;
+
+	protected: // Functions
+
+		// This is a single massive function that will handle properly blitting video data
+		// from input media sample to output media sample. This is necessary because different
+		// video formats have different striding in their data layout and the output format
+		// itself could have additional padding depending on renderer requirements
+		void CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActualDataLength);
+
+		// Given the input buffer, this function will extract the Y, U, and V planes from the
+		// data stream and store the pointers into the output array.
+		void ExtractYUV(BYTE* pBufferIn, BYTE* pPlanes[3]);
+
+		// Computes input and output strides and stores them into the appropriate member variables.
+		// Should be called every time the input or output media types changes.
+		void ComputeStrides();
+
+	private: // Data
+
 		static const int m_iPinCount = 3;
+
+	private: // Functions
 
 		// Returns true if the passed in MediaType is one of the 8-bit video types
 		bool CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType);

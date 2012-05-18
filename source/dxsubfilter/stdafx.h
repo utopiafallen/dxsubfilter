@@ -11,6 +11,9 @@
 // Windows Header Files:
 #include <windows.h>
 
+// Microsoft Concurrency Runtime
+#include <ppl.h>
+
 // STL
 #include <string>
 
@@ -18,4 +21,6 @@
 #include <DShow.h>
 #include <dvdmedia.h>
 #include "streams.h"
+
+
 

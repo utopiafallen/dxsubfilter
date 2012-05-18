@@ -28,6 +28,17 @@ HRESULT CSubtitleInputPin::CheckMediaType(const CMediaType* mtIn)
     return hr;
 }
 
+HRESULT CSubtitleInputPin::SetMediaType(const CMediaType* mtIn)
+{
+    // Set the base class media type (should always succeed)
+    HRESULT hr = CBasePin::SetMediaType(mtIn);
+    if (FAILED(hr)) {
+        return hr;
+    }
+
+    return m_pTransformFilter->SetMediaType(PINDIR_INPUT,mtIn);
+}
+
 STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 {
 	HRESULT hr;

@@ -12,6 +12,7 @@ using namespace DXSubFilter;
 CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk) 
 	: CTransformFilter(DXSUBFILTER_NAME, pUnk, CLSID_DXSubFilter)
 	, m_pInputSubtitlePin(nullptr)
+	, m_pAlignedBuffer(nullptr)
 {
 	// Just in case the CTransformFilter constructor doesn't default these to null
 	m_pInput = nullptr;
@@ -22,6 +23,11 @@ CDXSubFilter::~CDXSubFilter()
 {
 	// Do I need to manually delete m_pInput and m_pOutput?
 	delete m_pInputSubtitlePin;
+	
+	if (m_pAlignedBuffer)
+	{
+		_aligned_free(m_pAlignedBuffer);
+	}
 }
 
 //------------------------------------------------------------------------------
@@ -145,6 +151,12 @@ HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin
 					// Update the fact that we've reconnected the input on a new format
 					m_InputVideoType = mtOut;
 
+					ComputeStrides();
+
+					// Video sample size shouldn't ever change
+					m_pAlignedBuffer = static_cast<BYTE*>(_aligned_malloc(m_InputVideoType.lSampleSize, 16));
+					m_uAlignedBufferLength = m_InputVideoType.lSampleSize;
+
 					return S_OK;
 				}
 				else
@@ -160,6 +172,13 @@ HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin
 		}
 		else
 		{
+			// Input matches output so we're good to go
+			ComputeStrides();
+
+			// Video sample size shouldn't ever change
+			m_pAlignedBuffer = static_cast<BYTE*>(_aligned_malloc(m_InputVideoType.lSampleSize, 16));
+			m_uAlignedBufferLength = m_InputVideoType.lSampleSize;
+
 			return S_OK;
 		}
 	}
@@ -367,12 +386,19 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 		return hr;
 	}
 
+	// Check that input sample size is the same as when we first connected. This shouldn't have
+	// changed.
+	ASSERT(static_cast<size_t>(lBufferLength) == m_uAlignedBufferLength);
+
+	// Copy data into an aligned buffer for easier SSE processing
+	memcpy(m_pAlignedBuffer, pBufferIn, lBufferLength);
+
 	// Get subtitle data and overlay onto video frame. Or maybe pass in raw video data into 
 	// subtitle rendering core and let it do the overlaying? We'll see... (NB: Use output buffer
 	// video data)
 
 	// Copy buffer to output
-	CopyBuffer(pBufferIn, pBufferOut, lBufferLength);
+	CopyBuffer(m_pAlignedBuffer, pBufferOut, lBufferLength);
 
 	//pOut->SetActualDataLength(lBufferLength);
 
@@ -450,7 +476,7 @@ void CDXSubFilter::CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActua
 		//	memcpy(pDest, pSrc, m_InputStrideY);
 		//});
 
-		inputRows = ((srcActualDataLength / m_InputStrideY) - bmiIn.biHeight) * 2;
+		inputRows = (srcActualDataLength - (m_InputStrideY * bmiIn.biHeight)) / m_InputStrideUV;
 
 		ptrdiff_t dstOffset = m_OutputStrideY * bmiIn.biHeight;
 		ptrdiff_t srcOffset = m_InputStrideY * bmiIn.biHeight;
@@ -481,6 +507,10 @@ void CDXSubFilter::ExtractYUV(BYTE* pBufferIn, BYTE* pPlanes[3])
 
 void CDXSubFilter::ComputeStrides()
 {
+	// Default UV stride to 1 so that we don't divide by 0 in CopyBuffer.
+	m_InputStrideUV = 1;
+	m_OutputStrideUV = 1;
+
 	CMediaType& mtOut = m_pOutput->CurrentMediaType();
 	BITMAPINFOHEADER& bmiOut = reinterpret_cast<VIDEOINFOHEADER2*>(mtOut.pbFormat)->bmiHeader;
 

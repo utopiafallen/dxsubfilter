@@ -14,8 +14,13 @@
 // Microsoft Concurrency Runtime
 #include <ppl.h>
 
+// SSE intrinsics
+#include <emmintrin.h>
+#include <xmmintrin.h>
+
 // STL
 #include <string>
+#include <memory>
 
 // DirectShow
 #include <DShow.h>

@@ -43,14 +43,9 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 {
 	HRESULT hr;
 	BYTE* pBufferIn;
-	REFERENCE_TIME sampleStartTime, sampleEndTime;
 	long lBufferLength;
 
-	hr = pSample->GetMediaTime(&sampleStartTime, &sampleEndTime);
-	if (FAILED(hr))
-	{
-		return hr;
-	}
+	// Note to self: subtitle data is not timestamped.
 
 	hr = pSample->GetPointer(&pBufferIn);
 	if (FAILED(hr))
@@ -59,6 +54,9 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 	}
 
 	lBufferLength = pSample->GetActualDataLength();
+
+	// Append null terminator to character stream
+	pBufferIn[lBufferLength] = '\0';
 
 	// The sample should just be a single line of subtitle data
 	std::string s(reinterpret_cast<char*>(pBufferIn));

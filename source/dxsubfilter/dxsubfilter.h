@@ -19,19 +19,20 @@ namespace DXSubFilter
 {
 	// Supported video types. Note that the ordering matters as this is the order formats are
 	// exposed for connection. Any modifications to these lists must have corresponding updates
-	// in CDXSubFilter::ComputeStrides() and CDXSubFilter::CopyBuffer()
+	// in CDXSubFilter::ComputeStrides(), CDXSubFilter::CopyBuffer(), and 
+	// CDXSubFilter::CorrectVideoMediaType()
 	static const GUID DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[] = {
-		MEDIASUBTYPE_YUY2,	// Packed 4:2:2
 		MEDIASUBTYPE_NV12,	// Planar 4:2:0
 		MEDIASUBTYPE_YV12,	// Planar 4:2:0
+		MEDIASUBTYPE_YUY2,	// Packed 4:2:2
 		MEDIASUBTYPE_AYUV,	// Packed 4:4:4
 	};
 
 	static const GUID DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[] = {
-		MEDIASUBTYPE_P210,	// Planar 4:2:2
-		MEDIASUBTYPE_P216,	// Planar 4:2:2
 		MEDIASUBTYPE_P010,	// Planar 4:2:0
 		MEDIASUBTYPE_P016,	// Planar 4:2:0
+		MEDIASUBTYPE_P210,	// Planar 4:2:2
+		MEDIASUBTYPE_P216,	// Planar 4:2:2
 	};
 
 	static const size_t DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT = 
@@ -123,6 +124,12 @@ namespace DXSubFilter
 		// Computes input and output strides and stores them into the appropriate member variables.
 		// Should be called every time the input or output media types changes.
 		void ComputeStrides();
+
+		// Re-adjusts a fully specified MediaType to ensure all its parameters are coherent.
+		// NOTE: The passed in media type must have its VIDEOINFOHEADER/VIDEOINFOHEADER2 already
+		// filled in. Easiest way to do that is to copy from m_pInputVideoType before passing 
+		// into this function
+		void CorrectVideoMediaType(CMediaType* pMediaType);
 
 		// Returns true if the passed in MediaType is one of the 8-bit video types
 		bool CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType);

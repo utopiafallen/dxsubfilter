@@ -276,6 +276,9 @@ HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 		}
 		else
 		{
+			// Copy settings from input
+			*pMediaType = m_InputVideoType;
+
 			// Subtract 1 because 0 is used to return our stored input media type
 			int index = iPosition - 1; 
 
@@ -314,6 +317,9 @@ HRESULT CDXSubFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 					hr = VFW_S_NO_MORE_ITEMS;
 				}
 			}
+
+			// Make sure media type is still coherent
+			CorrectVideoMediaType(pMediaType);
 		}
 	}
 	else
@@ -588,5 +594,69 @@ void CDXSubFilter::ComputeStrides()
 			// Should never reach here
 		}
 	}
+}
+
+void CDXSubFilter::CorrectVideoMediaType(CMediaType* pMediaType)
+{
+	// Recompute certain parameters of MediaType
+	BITMAPINFOHEADER& bmiIn = reinterpret_cast<VIDEOINFOHEADER2*>(pMediaType->pbFormat)->bmiHeader;
+
+	const GUID subtype = pMediaType->subtype;
+	if (subtype == MEDIASUBTYPE_P010)
+	{
+		bmiIn.biCompression = '010P';
+		bmiIn.biBitCount = 24;
+		bmiIn.biSizeImage = (bmiIn.biHeight * bmiIn.biWidth * 3);
+	}
+	else if (subtype == MEDIASUBTYPE_P016)
+	{
+		bmiIn.biCompression = '610P';
+		bmiIn.biBitCount = 24;
+		bmiIn.biSizeImage = (bmiIn.biHeight * bmiIn.biWidth * 3);
+	}
+	else if (subtype == MEDIASUBTYPE_P210)
+	{
+		bmiIn.biCompression = '012P';
+		bmiIn.biBitCount = 24;
+		bmiIn.biSizeImage = (bmiIn.biHeight * bmiIn.biWidth * 4);
+	}
+	else if (subtype == MEDIASUBTYPE_P216)
+	{
+		bmiIn.biCompression = '612P';
+		bmiIn.biBitCount = 24;
+		bmiIn.biSizeImage = (bmiIn.biHeight * bmiIn.biWidth * 4);
+	}
+	else if (subtype == MEDIASUBTYPE_NV12)
+	{
+		bmiIn.biCompression = '21VN';
+		bmiIn.biBitCount = 12;
+		bmiIn.biSizeImage = (bmiIn.biHeight * bmiIn.biWidth * 3) / 2;
+	}
+	else if (subtype == MEDIASUBTYPE_YV12)
+	{
+		bmiIn.biCompression = '21VY';
+		bmiIn.biBitCount = 12;
+		bmiIn.biSizeImage = (bmiIn.biHeight * bmiIn.biWidth * 3) / 2;
+	}
+	else if (subtype == MEDIASUBTYPE_YUY2)
+	{
+		// No horizontal downsampling and 2:1 vertical downsampling so
+		// U and V are both H/2 so added together take up H memory
+		bmiIn.biCompression = '2YUY';
+		bmiIn.biBitCount = 16;
+		bmiIn.biSizeImage = (bmiIn.biHeight * bmiIn.biWidth * 2);
+	}
+	else if (subtype == MEDIASUBTYPE_AYUV)
+	{
+		bmiIn.biCompression = 'VUYA';
+		bmiIn.biBitCount = 32;
+		bmiIn.biSizeImage = (bmiIn.biHeight * bmiIn.biWidth * 4);
+	}
+	else
+	{
+		// Should never reach here
+	}
+
+	pMediaType->lSampleSize = bmiIn.biSizeImage;
 }
 //------------------------------------------------------------------------------

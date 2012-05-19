@@ -404,6 +404,8 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	// Copy data into an aligned buffer for easier SSE processing
 	memcpy(m_pAlignedBuffer, pBufferIn, lBufferLength);
 
+	// NOTE TO SELF: Handle VFR video? That'll probably fuck with animation.
+
 	// Get subtitle data and overlay onto video frame. Or maybe pass in raw video data into 
 	// subtitle rendering core and let it do the overlaying? We'll see... (NB: Use output buffer
 	// video data)

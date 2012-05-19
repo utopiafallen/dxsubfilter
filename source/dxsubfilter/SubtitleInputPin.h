@@ -20,6 +20,10 @@ namespace DXSubFilter
 		// CTransformInputPin overrides.
 		//===================================================
 
+		// Overridden to handle subtitle stream switching (maybe?)
+		HRESULT BreakConnect();
+		HRESULT CompleteConnect(IPin *pReceivePin);
+
 		// Check that we can support this output type. Overridden so that this pin will never
 		// receive video data.
 		HRESULT CheckMediaType(const CMediaType* mtIn);

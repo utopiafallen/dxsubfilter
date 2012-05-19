@@ -18,11 +18,12 @@ CSubtitleInputPin::~CSubtitleInputPin()
 HRESULT CSubtitleInputPin::CheckMediaType(const CMediaType* mtIn)
 {
 	// Check the input type. We reject if it's anything other than subtitle data
-    HRESULT hr = S_OK;
+    HRESULT hr = S_FALSE;
 
-	if (mtIn->majortype != MEDIATYPE_Subtitle)
+	if (mtIn->majortype == MEDIATYPE_Subtitle ||
+		mtIn->majortype == MEDIATYPE_Text)
 	{
-		hr = S_FALSE;
+		hr = S_OK;
 	}
 
     return hr;
@@ -37,6 +38,16 @@ HRESULT CSubtitleInputPin::SetMediaType(const CMediaType* mtIn)
     }
 
     return m_pTransformFilter->SetMediaType(PINDIR_INPUT,mtIn);
+}
+
+HRESULT CSubtitleInputPin::BreakConnect()
+{
+	return CTransformInputPin::BreakConnect();
+}
+
+HRESULT CSubtitleInputPin::CompleteConnect(IPin *pReceivePin)
+{
+	return CTransformInputPin::CompleteConnect(pReceivePin);
 }
 
 STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)

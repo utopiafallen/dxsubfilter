@@ -2,7 +2,8 @@
 // or project specific include files that are used frequently, but
 // are changed infrequently
 //
-
+#ifndef STDAFX_H
+#define STDAFX_H
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
@@ -38,3 +39,5 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
+
+#endif

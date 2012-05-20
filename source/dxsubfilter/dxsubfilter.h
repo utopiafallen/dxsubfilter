@@ -20,7 +20,8 @@ namespace DXSubFilter
 	// Supported video types. Note that the ordering matters as this is the order formats are
 	// exposed for connection. Any modifications to these lists must have corresponding updates
 	// in CDXSubFilter::ComputeStrides(), CDXSubFilter::CopyBuffer(), and 
-	// CDXSubFilter::CorrectVideoMediaType()
+	// CDXSubFilter::CorrectVideoMediaType(). Filter setup data should be updated as well in
+	// dllmain.cpp
 	static const GUID DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[] = {
 		MEDIASUBTYPE_NV12,	// Planar 4:2:0
 		MEDIASUBTYPE_YV12,	// Planar 4:2:0
@@ -43,6 +44,8 @@ namespace DXSubFilter
 
 	// Forward declarations
 	class CSubtitleInputPin;
+
+
 
 	class __declspec(uuid("3B6ED1B8-ECF6-422A-8F07-48980E6482CE")) CDXSubFilter : public CTransformFilter
 	{

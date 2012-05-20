@@ -27,12 +27,16 @@ CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk)
 
 CDXSubFilter::~CDXSubFilter()
 {
-	// Do I need to manually delete m_pInput and m_pOutput?
 	delete m_pInputSubtitlePin;
 	
 	if (m_pAlignedBuffer)
 	{
 		_aligned_free(m_pAlignedBuffer);
+	}
+
+	if (m_pSeek)
+	{
+		m_pSeek->Release();
 	}
 }
 
@@ -103,6 +107,10 @@ CBasePin* CDXSubFilter::GetPin(int n)
 			{
 				return nullptr;
 			}
+
+			// Attempt to load external subtitles first before upstream tries to connect to the
+			// subtitle input pin.
+			m_pInputSubtitlePin->LoadExternalSubtitles();
 		}
 		return m_pInputSubtitlePin;
 	default:

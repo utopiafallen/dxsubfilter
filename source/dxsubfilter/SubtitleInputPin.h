@@ -1,10 +1,16 @@
-// Custom subtitle input pin class to handle receiving subtitle data.
 #pragma once
 
 #include "stdafx.h"
+#include "SubtitleCoreEnumerations.h"
 
 namespace DXSubFilter
 {
+	//=======================================================================================
+	// CSubtitleInputPin
+	//	Custom subtitle input pin class to handle receiving subtitle data. We prioritize
+	//	external subtitles over embedded subtitles so we will fail connections if we 
+	//	succeeded in loading external subtitles.
+	//=======================================================================================
 	class CSubtitleInputPin : public CTransformInputPin
 	{
 	public:
@@ -41,6 +47,22 @@ namespace DXSubFilter
 		// the transform process for the video input.
 		STDMETHODIMP Receive(IMediaSample * pSample);
 
+		//===================================================
+		// CSubtitleInputPin functions.
+		//===================================================
+
+		// Attempt to load external subtitles. Call this before a connection attempt is made
+		// from the upstream filter. CDXSubFilter calls this in GetPin(). Call 
+		// IsExternalSubtitlesLoaded() to check if this succeeded.
+		void LoadExternalSubtitles();
+
+		bool IsExternalSubtitlesLoaded() { return m_bExternalSubtitlesLoaded; }
 	protected:
+
+		// Flagged to true if we loaded external subtitles
+		bool m_bExternalSubtitlesLoaded;
+
+		// Set
+		SubtitleCore::SubtitleType m_SubType;
 	};
 };

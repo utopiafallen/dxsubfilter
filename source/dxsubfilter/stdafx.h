@@ -2,7 +2,8 @@
 // or project specific include files that are used frequently, but
 // are changed infrequently
 //
-
+#ifndef STDAFX_H
+#define STDAFX_H
 #pragma once
 
 #include "targetver.h"
@@ -21,11 +22,13 @@
 // STL
 #include <string>
 #include <memory>
+#include <fstream>
 
 // DirectShow
 #include <DShow.h>
 #include <dvdmedia.h>
 #include "streams.h"
 
+#endif
 
 

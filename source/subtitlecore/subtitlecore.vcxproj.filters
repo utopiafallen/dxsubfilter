@@ -16,10 +16,16 @@
     <Filter Include="pch">
       <UniqueIdentifier>{cded6e33-0890-45c8-b739-f14816d67cd8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Interface">
+      <UniqueIdentifier>{9f29d508-49b6-4630-b834-14295ea9561f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
       <Filter>pch</Filter>
+    </ClInclude>
+    <ClInclude Include="SubtitleCoreEnumerations.h">
+      <Filter>Source Files\Interface</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

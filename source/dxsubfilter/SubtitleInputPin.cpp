@@ -61,6 +61,11 @@ HRESULT CSubtitleInputPin::CompleteConnect(IPin *pReceivePin)
 	return CTransformInputPin::CompleteConnect(pReceivePin);
 }
 
+STDMETHODIMP CSubtitleInputPin::EndOfStream()
+{
+	return S_OK;
+}
+
 STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 {
 	HRESULT hr;

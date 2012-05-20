@@ -30,6 +30,10 @@ namespace DXSubFilter
 		HRESULT BreakConnect();
 		HRESULT CompleteConnect(IPin *pReceivePin);
 
+		// Haali splitter sends EOS when there are no subtitles to display, but we shouldn't
+		// propagate this notification downstream so we override it.
+		STDMETHODIMP EndOfStream();
+
 		// Check that we can support this output type. Overridden so that this pin will never
 		// receive video data.
 		HRESULT CheckMediaType(const CMediaType* mtIn);

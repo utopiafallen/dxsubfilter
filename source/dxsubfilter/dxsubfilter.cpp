@@ -56,8 +56,7 @@ STDMETHODIMP CDXSubFilter::JoinFilterGraph(__inout_opt IFilterGraph * pGraph, __
 	// to check for that.
 	if (pGraph)
 	{
-		void* pSeek = static_cast<void*>(m_pSeek);
-		hr = pGraph->QueryInterface(__uuidof(IMediaSeeking), &pSeek);
+		hr = pGraph->QueryInterface(IID_IMediaSeeking, reinterpret_cast<void**>(&m_pSeek));
 	}
 
 	return hr;
@@ -419,7 +418,11 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	}
 
 	// Get current playback time
-	m_pSeek->GetCurrentPosition(&rtNow);
+	hr = m_pSeek->GetCurrentPosition(&rtNow);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
 
 	// Check that input sample size is the same as when we first connected. This shouldn't have
 	// changed.

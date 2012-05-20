@@ -13,6 +13,7 @@ CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk)
 	: CTransformFilter(DXSUBFILTER_NAME, pUnk, CLSID_DXSubFilter)
 	, m_pInputSubtitlePin(nullptr)
 	, m_pAlignedBuffer(nullptr)
+	, m_pSeek(nullptr)
 	, m_uAlignedBufferLength(0)
 	, m_InputStrideY(0)
 	, m_InputStrideUV(0)
@@ -41,6 +42,25 @@ CDXSubFilter::~CDXSubFilter()
 CUnknown* CDXSubFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT* phr)
 {
 	return new CDXSubFilter(pUnk);
+}
+
+STDMETHODIMP CDXSubFilter::JoinFilterGraph(__inout_opt IFilterGraph * pGraph, __in_opt LPCWSTR pName)
+{
+	HRESULT hr = CTransformFilter::JoinFilterGraph(pGraph, pName);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	// Get IMediaSeeking interface pointer. pGraph is NULL if we're leaving the graph so we need
+	// to check for that.
+	if (pGraph)
+	{
+		void* pSeek = static_cast<void*>(m_pSeek);
+		hr = pGraph->QueryInterface(__uuidof(IMediaSeeking), &pSeek);
+	}
+
+	return hr;
 }
 
 int CDXSubFilter::GetPinCount()
@@ -353,6 +373,7 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 {
 	HRESULT hr;
 
+	REFERENCE_TIME rtNow;
 	BYTE* pBufferIn, *pBufferOut;
 	long lBufferLength;
 
@@ -396,6 +417,9 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	{
 		return hr;
 	}
+
+	// Get current playback time
+	m_pSeek->GetCurrentPosition(&rtNow);
 
 	// Check that input sample size is the same as when we first connected. This shouldn't have
 	// changed.

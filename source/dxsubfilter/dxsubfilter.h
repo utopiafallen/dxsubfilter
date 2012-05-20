@@ -87,6 +87,15 @@ namespace DXSubFilter
 		virtual int GetPinCount();
 		virtual CBasePin* GetPin(int n);
 
+		//===================================================
+		// CBaseFilter overrides
+		//===================================================
+
+		// Overridden so we can store an interface pointer to IMediaSeeking from the filter
+		// graph.
+		STDMETHODIMP JoinFilterGraph(__inout_opt IFilterGraph * pGraph,
+									__in_opt LPCWSTR pName);
+
 	protected: // Data
 
 		// We use m_pInput inherited from CTransformFilter for our video input so we use a second
@@ -108,6 +117,10 @@ namespace DXSubFilter
 		// and re-use.
 		BYTE* m_pAlignedBuffer;
 		size_t m_uAlignedBufferLength;
+
+		// Pointer to IMediaSeeking interface exposed by the Filter Graph Manager. Used to get
+		// current playback time so we can display the right subtitles.
+		IMediaSeeking* m_pSeek;
 
 	protected: // Functions
 

@@ -63,6 +63,7 @@ HRESULT CSubtitleInputPin::CompleteConnect(IPin *pReceivePin)
 
 STDMETHODIMP CSubtitleInputPin::EndOfStream()
 {
+	//return CTransformInputPin::EndOfStream();
 	return S_OK;
 }
 
@@ -86,7 +87,7 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 	pBufferIn[lBufferLength] = '\0';
 
 	// The sample should just be a single line of subtitle data
-	std::wstring s(reinterpret_cast<wchar_t*>(pBufferIn));
+	std::string s(reinterpret_cast<char*>(pBufferIn));
 
 	return S_OK;
 }

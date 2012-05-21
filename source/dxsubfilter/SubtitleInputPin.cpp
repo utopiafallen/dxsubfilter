@@ -90,7 +90,7 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 {
 	HRESULT hr;
 	BYTE* pBufferIn;
-	long lBufferLength;
+	long lBufferLength, lBufferSize;
 
 	// Note to self: subtitle data is not timestamped.
 
@@ -109,12 +109,35 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 	}
 
 	lBufferLength = pSample->GetActualDataLength();
+	lBufferSize = pSample->GetSize();
 
-	// Append null terminator to character stream
-	pBufferIn[lBufferLength] = '\0';
+	// Append null terminator to character stream if we can.
+	// Convert UTF-8 to UTF-16 since using MBCS is kind of ugly. This is actually kind of confusing
+	// so this may need to be revisited
+	int numWChars = 0;
+	if (lBufferSize > lBufferLength)
+	{
+		pBufferIn[lBufferLength] = '\0';
+		lBufferLength += 1;
+
+		numWChars = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, NULL, 0);
+	}
+	else
+	{
+		// Couldn't add null terminator so account for that by adding 1 to required buffer size.
+		numWChars = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, NULL, 0) + 1;
+	}
+
+	wchar_t* wchData = new wchar_t[numWChars];
+	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, wchData, numWChars);
+	
+	// Always add null terminator.
+	wchData[numWChars-1] = L'\0';
 
 	// The sample should just be a single line of subtitle data
-	std::string s(reinterpret_cast<char*>(pBufferIn));
+	std::wstring s(wchData);
+
+	delete[] wchData;
 
 	return S_OK;
 }

@@ -152,6 +152,12 @@ namespace DXSubFilter
 		// Returns true if the passed in MediaType is one of the 10/16-bit video types
 		bool CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType);
 
+		// Checks for embedded subtitles by searching for the splitter, enumerating its pins,
+		// and seeing if any of them expose MEDIATYPE_Subtitle or MEDIATYPE_Text as a connection
+		// format. This assumes that splitters don't expose output pins if there is no embedded
+		// subtitle data.
+		bool CheckForEmbeddedSubtitles();
+
 		// Calculate current playback time relative to playback duration.
 		REFERENCE_TIME CalcCurrentTime();
 

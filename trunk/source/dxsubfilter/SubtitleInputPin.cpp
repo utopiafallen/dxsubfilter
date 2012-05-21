@@ -81,6 +81,11 @@ STDMETHODIMP CSubtitleInputPin::EndOfStream()
 	return S_OK;
 }
 
+STDMETHODIMP CSubtitleInputPin::NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate)
+{
+	return CBasePin::NewSegment(tStart, tStop, dRate);
+}
+
 STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 {
 	HRESULT hr;

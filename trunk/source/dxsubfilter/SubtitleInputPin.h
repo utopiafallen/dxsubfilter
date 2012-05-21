@@ -35,6 +35,7 @@ namespace DXSubFilter
 		// Overridden to do skip transform filter calls so seeking doesn't break.
 		STDMETHODIMP BeginFlush(void);
 		STDMETHODIMP EndFlush(void);
+		STDMETHODIMP NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate);
 
 		// Haali splitter sends EOS when there are no subtitles to display, but we shouldn't
 		// propagate this notification downstream so we override it.

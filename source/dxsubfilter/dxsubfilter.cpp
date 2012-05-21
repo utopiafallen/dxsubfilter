@@ -103,26 +103,36 @@ HRESULT CDXSubFilter::CheckInputType(const CMediaType* mtIn)
 	// We only accept video. CSubtitleInputPin handles checking for subtitle data.
 	if (mtIn->majortype == MEDIATYPE_Video)
 	{
-		// Check to see if the video subtype is one of the supported subtypes
-		GUID subtype = mtIn->subtype;
-		for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT; i++)
+		// Reject connection if no external subtitles or embedded subtitles are found so we don't
+		// get added to the graph and do nothing.
+		if (m_pInputSubtitlePin->IsExternalSubtitlesLoaded() || CheckForEmbeddedSubtitles())
 		{
-			if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[i])
+			// Check to see if the video subtype is one of the supported subtypes
+			GUID subtype = mtIn->subtype;
+			for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT_COUNT; i++)
 			{
-				return S_OK;
+				if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_8BIT[i])
+				{
+					return S_OK;
+				}
 			}
-		}
 
-		for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT; i++)
+			for (size_t i = 0; i < DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT; i++)
+			{
+				if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[i])
+				{
+					return S_OK;
+				}
+			}
+
+			// Not a supported subtype so fail
+			return VFW_E_TYPE_NOT_ACCEPTED;
+		}
+		else
 		{
-			if (subtype == DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT[i])
-			{
-				return S_OK;
-			}
+			// No subtitles found so reject connection.
+			return VFW_E_TYPE_NOT_ACCEPTED;
 		}
-
-		// Not a supported subtype so fail
-		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
 	else
 	{
@@ -495,6 +505,92 @@ bool CDXSubFilter::CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType)
 	}
 
 	return result;
+}
+
+bool CDXSubFilter::CheckForEmbeddedSubtitles()
+{
+	bool bFoundEmbeddedSubtitles = false;
+
+	// Get filter enumerator
+	IEnumFilters* pEnum = nullptr;
+	IBaseFilter* pFilter = nullptr;
+
+	// Search for splitter
+	if (SUCCEEDED(m_pGraph->EnumFilters(&pEnum)))
+	{
+		HRESULT hr = E_FAIL;
+		while (S_OK == pEnum->Next(1, &pFilter, 0))
+		{
+			IAMStreamSelect* pStreamSelect = nullptr;
+			hr = pFilter->QueryInterface(IID_IAMStreamSelect, 
+										reinterpret_cast<void**>(&pStreamSelect));
+
+			// If we found the splitter, don't release its filter pointer until we're done
+			if (SUCCEEDED(hr))
+			{
+				// We don't actually care about the IAMStreamSelect interface pointer itself, we
+				// just use it to verify that we got a splitter so release it.
+				pStreamSelect->Release();
+				break;
+			}
+			else
+			{
+				pFilter->Release();
+			}
+		}
+		pEnum->Release();
+
+		// Enumerate the pins on the splitter
+		if (hr == S_OK)
+		{
+			IEnumPins* pEnumPins = nullptr;
+			IPin* pPin = nullptr;
+
+			hr = pFilter->EnumPins(&pEnumPins);
+			if (SUCCEEDED(hr))
+			{
+				IEnumMediaTypes* pEnumMT = nullptr;
+
+				while (S_OK == pEnumPins->Next(1, &pPin, 0))
+				{
+					hr = pPin->EnumMediaTypes(&pEnumMT);
+
+					// Enumerate the preferred media types of this pin
+					if (SUCCEEDED(hr))
+					{
+						AM_MEDIA_TYPE* pMediaType = nullptr;
+
+						// Enumerator will allocate AM_MEDIA_TYPE structure for us so we need
+						// to manually delete it.
+						while (S_OK == pEnumMT->Next(1, &pMediaType, 0))
+						{
+							if (pMediaType->majortype == MEDIATYPE_Text ||
+								pMediaType->majortype == MEDIATYPE_Subtitle)
+							{
+								bFoundEmbeddedSubtitles = true;
+							}
+							DeleteMediaType(pMediaType);
+
+							if (bFoundEmbeddedSubtitles)
+							{
+								break;
+							}
+						}
+						
+						pEnumMT->Release();
+
+						if (bFoundEmbeddedSubtitles)
+						{
+							break;
+						}
+					}
+				}
+				pEnumPins->Release();
+			}
+			pFilter->Release();
+		}
+	}
+	return bFoundEmbeddedSubtitles;
 }
 
 void CDXSubFilter::CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActualDataLength)

@@ -5,6 +5,8 @@
 
 namespace DXSubFilter
 {
+	class CDXSubFilter;
+
 	//=======================================================================================
 	// CSubtitleInputPin
 	//	Custom subtitle input pin class to handle receiving subtitle data. We prioritize
@@ -16,7 +18,7 @@ namespace DXSubFilter
 	public:
 		CSubtitleInputPin(
 			LPCWSTR pObjectName,
-			CTransformFilter *pTransformFilter,
+			CDXSubFilter *pTransformFilter,
 			HRESULT * phr,
 			LPCWSTR pName);
 	
@@ -29,6 +31,10 @@ namespace DXSubFilter
 		// Overridden to handle subtitle stream switching (maybe?)
 		HRESULT BreakConnect();
 		HRESULT CompleteConnect(IPin *pReceivePin);
+
+		// Overridden to do skip transform filter calls so seeking doesn't break.
+		STDMETHODIMP BeginFlush(void);
+		STDMETHODIMP EndFlush(void);
 
 		// Haali splitter sends EOS when there are no subtitles to display, but we shouldn't
 		// propagate this notification downstream so we override it.

@@ -2,9 +2,11 @@
 #include "dxsubfilter_uuids.h"
 #include "SubtitleInputPin.h"
 
+#include "dxsubfilter.h"
+
 using namespace DXSubFilter;
 
-CSubtitleInputPin::CSubtitleInputPin(LPCWSTR pObjectName, CTransformFilter *pTransformFilter,
+CSubtitleInputPin::CSubtitleInputPin(LPCWSTR pObjectName, CDXSubFilter *pTransformFilter,
 	HRESULT * phr, LPCWSTR pName) 
 	: CTransformInputPin(pObjectName, pTransformFilter, phr, pName)
 	, m_bExternalSubtitlesLoaded(false)
@@ -59,6 +61,18 @@ HRESULT CSubtitleInputPin::BreakConnect()
 HRESULT CSubtitleInputPin::CompleteConnect(IPin *pReceivePin)
 {
 	return CTransformInputPin::CompleteConnect(pReceivePin);
+}
+
+STDMETHODIMP CSubtitleInputPin::BeginFlush()
+{
+	//CDXSubFilter* pSubFilter = static_cast<CDXSubFilter*>(m_pTransformFilter);
+	//CAutoLock lck(&pSubFilter->m_csFilter);
+	return CBaseInputPin::BeginFlush();
+}
+
+STDMETHODIMP CSubtitleInputPin::EndFlush()
+{
+	return CBaseInputPin::EndFlush();
 }
 
 STDMETHODIMP CSubtitleInputPin::EndOfStream()

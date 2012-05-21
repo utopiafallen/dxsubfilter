@@ -432,7 +432,8 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	// Copy buffer to output
 	CopyBuffer(m_pAlignedBuffer, pBufferOut, lBufferLength);
 
-	//pOut->SetActualDataLength(lBufferLength);
+	pOut->SetActualDataLength(lBufferLength);
+	pOut->SetDiscontinuity(pIn->IsDiscontinuity());
 
 	return S_OK;
 }

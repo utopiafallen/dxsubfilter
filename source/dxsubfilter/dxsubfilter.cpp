@@ -18,6 +18,9 @@ CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk)
 	, m_InputStrideUV(0)
 	, m_OutputStrideUV(0)
 	, m_OutputStrideY(0)
+	, m_rtStart(0)
+	, m_rtEnd(0)
+	, m_dPlaybackRate(1.0)
 {
 	// Just in case the CTransformFilter constructor doesn't default these to null
 	m_pInput = nullptr;
@@ -353,6 +356,22 @@ HRESULT CDXSubFilter::SetMediaType(PIN_DIRECTION direction,const CMediaType *pmt
 	}
 }
 
+HRESULT CDXSubFilter::NewSegment(
+                        REFERENCE_TIME tStart,
+                        REFERENCE_TIME tStop,
+                        double dRate)
+{
+	m_rtStart = tStart;
+	m_rtEnd = tStop;
+	m_dPlaybackRate = dRate;
+
+	// For some reason, IMediaFilter::Run is called AFTER we start receiving our first sample
+	// from the input pin, so we initialize m_tStart here to something or else when we go to 
+	// calculate current playback time, we'll be way wrong.
+	m_pClock->GetTime(&m_tStart.m_time);
+	return CTransformFilter::NewSegment(tStart, tStop, dRate);
+}
+
 HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 {
 	HRESULT hr;
@@ -403,18 +422,7 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	}
 
 	// Get current playback time
-	IMediaSeeking* pSeek = nullptr;
-	hr = m_pGraph->QueryInterface(IID_IMediaSeeking, reinterpret_cast<void**>(&pSeek));
-	if (FAILED(hr))
-	{
-		return hr;
-	}
-	hr = pSeek->GetCurrentPosition(&rtNow);
-	if (FAILED(hr))
-	{
-		return hr;
-	}
-	pSeek->Release();
+	rtNow = CalcCurrentTime();
 
 	// Check that input sample size is the same as when we first connected. This shouldn't have
 	// changed.
@@ -442,6 +450,18 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 
 //------------------------------------------------------------------------------
 // These are all the non-DirectShow related functions
+
+REFERENCE_TIME CDXSubFilter::CalcCurrentTime()
+{
+	// Find elapsed delta time. m_tStart is the reference clock time at which 
+	// IMediaFilter::Run was called.
+	REFERENCE_TIME rtCurrentRefTime;
+	m_pClock->GetTime(&rtCurrentRefTime);
+
+	REFERENCE_TIME rtDelta = rtCurrentRefTime - m_tStart.m_time;
+
+	return m_rtStart + static_cast<REFERENCE_TIME>(rtDelta * m_dPlaybackRate);
+}
 
 bool CDXSubFilter::CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType)
 {

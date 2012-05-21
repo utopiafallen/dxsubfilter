@@ -94,6 +94,14 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 
 	// Note to self: subtitle data is not timestamped.
 
+	// Check everything is ok with BaseInputPin first
+	hr = CBaseInputPin::Receive(pSample);
+	if (FAILED(hr))
+	{
+		return hr;
+	}
+
+	// Get pointer to subtitle data
 	hr = pSample->GetPointer(&pBufferIn);
 	if (FAILED(hr))
 	{

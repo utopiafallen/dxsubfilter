@@ -59,6 +59,14 @@ namespace DXSubFilter
 		// CTransformFilter overrides
 		//===================================================
 
+		// Override to save tStart and tStop. These are actually given in time relative to 
+		// playback duration i.e. absolute playback position. We can then use these values to
+		// calculate time stamps of input samples.
+		virtual HRESULT NewSegment(
+                        REFERENCE_TIME tStart,
+                        REFERENCE_TIME tStop,
+                        double dRate);
+
 		// Perform transform. Note that this only handles the overlaying of the subtitle onto
 		// the video frame. Subtitle data is received and processed internally in CSubtitleInputPin
 		virtual HRESULT Transform(IMediaSample * pIn, IMediaSample *pOut);
@@ -113,6 +121,9 @@ namespace DXSubFilter
 		BYTE* m_pAlignedBuffer;
 		size_t m_uAlignedBufferLength;
 
+		REFERENCE_TIME m_rtStart, m_rtEnd;
+		double m_dPlaybackRate;
+
 	protected: // Functions
 
 		// This is a single massive function that will handle properly blitting video data
@@ -140,6 +151,9 @@ namespace DXSubFilter
 
 		// Returns true if the passed in MediaType is one of the 10/16-bit video types
 		bool CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType);
+
+		// Self-explanatory.
+		REFERENCE_TIME CalcCurrentTime();
 
 	private: // Data
 

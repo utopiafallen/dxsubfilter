@@ -128,16 +128,14 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 		numWChars = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, NULL, 0) + 1;
 	}
 
-	wchar_t* wchData = new wchar_t[numWChars];
-	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, wchData, numWChars);
+	std::shared_ptr<wchar_t> wchData(new wchar_t[numWChars]);
+	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, wchData.get(), numWChars);
 	
 	// Always add null terminator.
-	wchData[numWChars-1] = L'\0';
+	wchData.get()[numWChars-1] = L'\0';
 
 	// The sample should just be a single line of subtitle data
-	std::wstring s(wchData);
-
-	delete[] wchData;
+	std::wstring s(wchData.get());
 
 	return S_OK;
 }

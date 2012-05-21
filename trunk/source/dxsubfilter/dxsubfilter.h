@@ -152,7 +152,7 @@ namespace DXSubFilter
 		// Returns true if the passed in MediaType is one of the 10/16-bit video types
 		bool CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType);
 
-		// Self-explanatory.
+		// Calculate current playback time relative to playback duration.
 		REFERENCE_TIME CalcCurrentTime();
 
 	private: // Data

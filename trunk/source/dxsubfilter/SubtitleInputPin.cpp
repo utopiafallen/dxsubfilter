@@ -227,7 +227,7 @@ void CSubtitleInputPin::LoadExternalSubtitles()
 	}
 }
 
-SubtitleCore::SubtitleType CSubtitleInputPin::MapFileExtToSubtitleType(const std::wstring& fileExt)
+SubtitleCore::SubtitleType CSubtitleInputPin::MapFileExtToSubtitleType(const std::wstring& fileExt) const
 {
 	if (fileExt.compare(L".ass") == 0)
 	{
@@ -251,7 +251,7 @@ SubtitleCore::SubtitleType CSubtitleInputPin::MapFileExtToSubtitleType(const std
 	}
 }
 
-SubtitleCore::SubtitleType CSubtitleInputPin::MapMediaTypeToSubtitleType(const CMediaType& mt)
+SubtitleCore::SubtitleType CSubtitleInputPin::MapMediaTypeToSubtitleType(const CMediaType& mt) const
 {
 	if (mt.subtype == MEDIASUBTYPE_ASS)
 	{

@@ -68,12 +68,20 @@ namespace DXSubFilter
 		void LoadExternalSubtitles();
 
 		bool IsExternalSubtitlesLoaded() { return m_bExternalSubtitlesLoaded; }
-	protected:
+	protected: // Data
 
 		// Flagged to true if we loaded external subtitles
 		bool m_bExternalSubtitlesLoaded;
 
-		// Set
-		SubtitleCore::SubtitleType m_SubType;
+		// Set to the current subtitle type that we're rendering
+		SubtitleCore::SubtitleType m_CurrentSubType;
+
+	protected: // Functions
+
+		// Maps a file extension to the appropriate SubtitleType
+		SubtitleCore::SubtitleType MapFileExtToSubtitleType(const std::wstring& fileExt);
+
+		// Maps a media subtype to the appropriate SubtitleType
+		SubtitleCore::SubtitleType MapMediaSubtypeToSubtitleType(const GUID& mtSubtype);
 	};
 };

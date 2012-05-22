@@ -10,7 +10,7 @@ CSubtitleInputPin::CSubtitleInputPin(LPCWSTR pObjectName, CDXSubFilter *pTransfo
 	HRESULT * phr, LPCWSTR pName) 
 	: CTransformInputPin(pObjectName, pTransformFilter, phr, pName)
 	, m_bExternalSubtitlesLoaded(false)
-	, m_SubType(SubtitleCore::SBT_NONE)
+	, m_CurrentSubType(SubtitleCore::SBT_NONE)
 {
 
 }
@@ -65,8 +65,6 @@ HRESULT CSubtitleInputPin::CompleteConnect(IPin *pReceivePin)
 
 STDMETHODIMP CSubtitleInputPin::BeginFlush()
 {
-	//CDXSubFilter* pSubFilter = static_cast<CDXSubFilter*>(m_pTransformFilter);
-	//CAutoLock lck(&pSubFilter->m_csFilter);
 	return CBaseInputPin::BeginFlush();
 }
 
@@ -128,14 +126,15 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 		numWChars = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, NULL, 0) + 1;
 	}
 
-	std::shared_ptr<wchar_t> wchData(new wchar_t[numWChars]);
-	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, wchData.get(), numWChars);
+	// Initialize a vector to numWChars of junk data that will get overwritten by MultiByteToWideChar
+	std::vector<wchar_t> wchData (numWChars, L'A');
+	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, &wchData[0], numWChars);
 	
 	// Always add null terminator.
-	wchData.get()[numWChars-1] = L'\0';
+	wchData[numWChars-1] = L'\0';
 
 	// The sample should just be a single line of subtitle data
-	std::wstring s(wchData.get());
+	std::wstring s(&wchData[0]);
 
 	return S_OK;
 }

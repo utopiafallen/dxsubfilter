@@ -29,7 +29,7 @@ namespace DXSubFilter
 		//===================================================
 
 		// Overridden to handle subtitle stream switching (maybe?)
-		HRESULT BreakConnect();
+		STDMETHODIMP Disconnect();
 		HRESULT CompleteConnect(IPin *pReceivePin);
 
 		// Overridden to do skip transform filter calls so seeking doesn't break.
@@ -74,7 +74,7 @@ namespace DXSubFilter
 		bool m_bExternalSubtitlesLoaded;
 
 		// Set to the current subtitle type that we're rendering
-		SubtitleCore::SubtitleType m_CurrentSubType;
+		SubtitleCore::SubtitleType m_CurrentSubtitleType;
 
 	protected: // Functions
 
@@ -82,6 +82,6 @@ namespace DXSubFilter
 		SubtitleCore::SubtitleType MapFileExtToSubtitleType(const std::wstring& fileExt);
 
 		// Maps a media subtype to the appropriate SubtitleType
-		SubtitleCore::SubtitleType MapMediaSubtypeToSubtitleType(const GUID& mtSubtype);
+		SubtitleCore::SubtitleType MapMediaTypeToSubtitleType(const CMediaType& mt);
 	};
 };

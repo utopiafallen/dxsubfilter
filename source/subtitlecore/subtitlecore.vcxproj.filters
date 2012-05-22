@@ -19,6 +19,18 @@
     <Filter Include="Source Files\Interface">
       <UniqueIdentifier>{9f29d508-49b6-4630-b834-14295ea9561f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\SRT">
+      <UniqueIdentifier>{a1e10d66-2ea3-4804-8632-f1bb930e99bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ASS">
+      <UniqueIdentifier>{6b655cc2-3972-4635-80d9-e4a5c830af4d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\SSA">
+      <UniqueIdentifier>{1e7a1d65-0127-4570-8c29-c2c4a5d5ce7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\VOBSUB">
+      <UniqueIdentifier>{da9ac246-5144-44a2-bf24-4ffbfa7333ad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

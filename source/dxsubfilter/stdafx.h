@@ -23,6 +23,7 @@
 #include <string>
 #include <memory>
 #include <fstream>
+#include <unordered_map>
 
 // DirectShow
 #include <DShow.h>

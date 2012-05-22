@@ -12,8 +12,7 @@ namespace SubtitleCore
 		L".ass", 
 		L".ssa", 
 		L".srt", 
-		L".idx", 
-		L".sub",
+		L".idx", // Assume user will properly load matching .sub for us
 	};
 	static const size_t SubtitleFileExtensionsCount = ARRAYSIZE(SubtitleFileExtensions);
 };

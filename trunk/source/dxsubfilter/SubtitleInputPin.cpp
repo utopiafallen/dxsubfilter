@@ -10,7 +10,7 @@ CSubtitleInputPin::CSubtitleInputPin(LPCWSTR pObjectName, CDXSubFilter *pTransfo
 	HRESULT * phr, LPCWSTR pName) 
 	: CTransformInputPin(pObjectName, pTransformFilter, phr, pName)
 	, m_bExternalSubtitlesLoaded(false)
-	, m_CurrentSubType(SubtitleCore::SBT_NONE)
+	, m_CurrentSubtitleType(SubtitleCore::SBT_NONE)
 {
 
 }
@@ -53,13 +53,15 @@ HRESULT CSubtitleInputPin::SetMediaType(const CMediaType* mtIn)
     return m_pTransformFilter->SetMediaType(PINDIR_INPUT,mtIn);
 }
 
-HRESULT CSubtitleInputPin::BreakConnect()
+STDMETHODIMP CSubtitleInputPin::Disconnect()
 {
-	return CTransformInputPin::BreakConnect();
+	m_CurrentSubtitleType = SubtitleCore::SBT_NONE;
+	return CTransformInputPin::Disconnect();
 }
 
 HRESULT CSubtitleInputPin::CompleteConnect(IPin *pReceivePin)
 {
+	m_CurrentSubtitleType = MapMediaTypeToSubtitleType(m_mt);
 	return CTransformInputPin::CompleteConnect(pReceivePin);
 }
 
@@ -194,10 +196,82 @@ void CSubtitleInputPin::LoadExternalSubtitles()
 				if (subtitleFile.is_open())
 				{
 					m_bExternalSubtitlesLoaded = true;
+					m_CurrentSubtitleType = MapFileExtToSubtitleType(SubtitleCore::SubtitleFileExtensions[i]);
+
+					// Load subtitle data
+
+
 					subtitleFile.close();
+
+					// If we found VOBSUB subtitles, we also need to load the accompanying .sub file
+					if (m_CurrentSubtitleType == SubtitleCore::SBT_VOBSUB)
+					{
+						sNewFileName = sFileNameNoExt + L".sub";
+						
+						subtitleFile.open(sNewFileName);
+
+						if (subtitleFile.is_open())
+						{
+							subtitleFile.close();
+						}
+						else
+						{
+							// We failed to load accompanying .sub file so reset the fact that we
+							// opened external subtitles.
+							m_bExternalSubtitlesLoaded = false;
+						}
+					}
 				}
 			}
 		}
+	}
+}
+
+SubtitleCore::SubtitleType CSubtitleInputPin::MapFileExtToSubtitleType(const std::wstring& fileExt)
+{
+	if (fileExt.compare(L".ass") == 0)
+	{
+		return SubtitleCore::SBT_ASS;
+	}
+	else if (fileExt.compare(L".srt") == 0)
+	{
+		return SubtitleCore::SBT_SRT;
+	}
+	else if (fileExt.compare(L".ssa") == 0)
+	{
+		return SubtitleCore::SBT_SSA;
+	}
+	else if (fileExt.compare(L".idx") == 0)
+	{
+		return SubtitleCore::SBT_VOBSUB;
+	}
+	else
+	{
+		return SubtitleCore::SBT_NONE;
+	}
+}
+
+SubtitleCore::SubtitleType CSubtitleInputPin::MapMediaTypeToSubtitleType(const CMediaType& mt)
+{
+	if (mt.subtype == MEDIASUBTYPE_ASS)
+	{
+		return SubtitleCore::SBT_ASS;
+	}
+	else if (mt.subtype == MEDIASUBTYPE_UTF8)
+	{
+		return SubtitleCore::SBT_SRT;
+	}
+	else if (mt.subtype == MEDIASUBTYPE_SSA)
+	{
+		return SubtitleCore::SBT_SSA;
+	}
+	else if (mt.subtype == MEDIASUBTYPE_VOBSUB)
+	{
+		return SubtitleCore::SBT_VOBSUB;
+	}
+	else
+	{
+		return SubtitleCore::SBT_NONE;
 	}
 }
 //------------------------------------------------------------------------------

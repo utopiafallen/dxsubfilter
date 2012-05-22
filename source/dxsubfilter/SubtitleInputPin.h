@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "SubtitleCoreEnumerations.h"
+#include "ISubtitleRenderer.h"
 
 namespace DXSubFilter
 {
@@ -67,7 +68,7 @@ namespace DXSubFilter
 		// IsExternalSubtitlesLoaded() to check if this succeeded.
 		void LoadExternalSubtitles();
 
-		bool IsExternalSubtitlesLoaded() { return m_bExternalSubtitlesLoaded; }
+		bool IsExternalSubtitlesLoaded() const { return m_bExternalSubtitlesLoaded; }
 	protected: // Data
 
 		// Flagged to true if we loaded external subtitles
@@ -79,9 +80,9 @@ namespace DXSubFilter
 	protected: // Functions
 
 		// Maps a file extension to the appropriate SubtitleType
-		SubtitleCore::SubtitleType MapFileExtToSubtitleType(const std::wstring& fileExt);
+		SubtitleCore::SubtitleType MapFileExtToSubtitleType(const std::wstring& fileExt) const;
 
 		// Maps a media subtype to the appropriate SubtitleType
-		SubtitleCore::SubtitleType MapMediaTypeToSubtitleType(const CMediaType& mt);
+		SubtitleCore::SubtitleType MapMediaTypeToSubtitleType(const CMediaType& mt) const;
 	};
 };

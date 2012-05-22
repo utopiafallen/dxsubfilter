@@ -42,6 +42,8 @@ namespace DXSubFilter
 	static const size_t DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT_COUNT = 
 						ARRAYSIZE(DXSUBFILTER_SUPPORTED_VIDEO_SUBTYPES_16BIT);
 
+
+
 	// Forward declarations
 	class CSubtitleInputPin;
 
@@ -130,11 +132,11 @@ namespace DXSubFilter
 		// from input media sample to output media sample. This is necessary because different
 		// video formats have different striding in their data layout and the output format
 		// itself could have additional padding depending on renderer requirements
-		void CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActualDataLength);
+		void CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActualDataLength) const;
 
 		// Given the input buffer, this function will extract the Y, U, and V planes from the
 		// data stream and store the pointers into the output array.
-		void ExtractYUV(BYTE* pBufferIn, BYTE* pPlanes[3]);
+		void ExtractYUV(BYTE* pBufferIn, BYTE* pPlanes[3]) const;
 
 		// Computes input and output strides and stores them into the appropriate member variables.
 		// Should be called every time the input or output media types changes.
@@ -144,22 +146,22 @@ namespace DXSubFilter
 		// NOTE: The passed in media type must have its VIDEOINFOHEADER/VIDEOINFOHEADER2 already
 		// filled in. Easiest way to do that is to copy from m_pInputVideoType before passing 
 		// into this function
-		void CorrectVideoMediaType(CMediaType* pMediaType);
+		void CorrectVideoMediaType(CMediaType* pMediaType) const;
 
 		// Returns true if the passed in MediaType is one of the 8-bit video types
-		bool CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType);
+		bool CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType) const;
 
 		// Returns true if the passed in MediaType is one of the 10/16-bit video types
-		bool CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType);
+		bool CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType) const;
 
 		// Checks for embedded subtitles by searching for the splitter, enumerating its pins,
 		// and seeing if any of them expose MEDIATYPE_Subtitle or MEDIATYPE_Text as a connection
 		// format. This assumes that splitters don't expose output pins if there is no embedded
 		// subtitle data.
-		bool CheckForEmbeddedSubtitles();
+		bool CheckForEmbeddedSubtitles() const;
 
 		// Calculate current playback time relative to playback duration.
-		REFERENCE_TIME CalcCurrentTime();
+		REFERENCE_TIME CalcCurrentTime() const;
 
 	private: // Data
 

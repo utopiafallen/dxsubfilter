@@ -461,7 +461,7 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 //------------------------------------------------------------------------------
 // These are all the non-DirectShow related functions
 
-REFERENCE_TIME CDXSubFilter::CalcCurrentTime()
+REFERENCE_TIME CDXSubFilter::CalcCurrentTime() const
 {
 	// Find elapsed delta time. m_tStart is the reference clock time at which 
 	// IMediaFilter::Run was called.
@@ -473,7 +473,7 @@ REFERENCE_TIME CDXSubFilter::CalcCurrentTime()
 	return m_rtStart + static_cast<REFERENCE_TIME>(rtDelta * m_dPlaybackRate);
 }
 
-bool CDXSubFilter::CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType)
+bool CDXSubFilter::CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType) const
 {
 	bool result = false;
 
@@ -490,7 +490,7 @@ bool CDXSubFilter::CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType)
 	return result;
 }
 
-bool CDXSubFilter::CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType)
+bool CDXSubFilter::CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType) const
 {
 	bool result = false;
 
@@ -507,7 +507,7 @@ bool CDXSubFilter::CheckVideoSubtypeIs16Bit(const CMediaType* pMediaType)
 	return result;
 }
 
-bool CDXSubFilter::CheckForEmbeddedSubtitles()
+bool CDXSubFilter::CheckForEmbeddedSubtitles() const
 {
 	bool bFoundEmbeddedSubtitles = false;
 
@@ -593,7 +593,7 @@ bool CDXSubFilter::CheckForEmbeddedSubtitles()
 	return bFoundEmbeddedSubtitles;
 }
 
-void CDXSubFilter::CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActualDataLength)
+void CDXSubFilter::CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActualDataLength) const
 {
 	size_t inputRows;
 
@@ -660,7 +660,7 @@ void CDXSubFilter::CopyBuffer(BYTE* pBufferIn, BYTE* pBufferOut, size_t srcActua
 	}
 }
 
-void CDXSubFilter::ExtractYUV(BYTE* pBufferIn, BYTE* pPlanes[3])
+void CDXSubFilter::ExtractYUV(BYTE* pBufferIn, BYTE* pPlanes[3]) const
 {
 	//TODO: Finish this
 }
@@ -734,7 +734,7 @@ void CDXSubFilter::ComputeStrides()
 	}
 }
 
-void CDXSubFilter::CorrectVideoMediaType(CMediaType* pMediaType)
+void CDXSubFilter::CorrectVideoMediaType(CMediaType* pMediaType) const
 {
 	// Recompute certain parameters of MediaType
 	BITMAPINFOHEADER& bmiIn = reinterpret_cast<VIDEOINFOHEADER2*>(pMediaType->pbFormat)->bmiHeader;

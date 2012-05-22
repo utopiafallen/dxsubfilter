@@ -39,10 +39,22 @@
     <ClInclude Include="SubtitleCoreEnumerations.h">
       <Filter>Source Files\Interface</Filter>
     </ClInclude>
+    <ClInclude Include="ISubtitleRenderer.h">
+      <Filter>Source Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="SubtitleRendererFactory.h">
+      <Filter>Source Files\Interface</Filter>
+    </ClInclude>
+    <ClInclude Include="SubtitlePicture.h">
+      <Filter>Source Files\Interface</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>pch</Filter>
+    </ClCompile>
+    <ClCompile Include="SubtitleRendererFactory.cpp">
+      <Filter>Source Files\Interface</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

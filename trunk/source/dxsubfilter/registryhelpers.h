@@ -2,9 +2,13 @@
 // registry. Configuration data is stored in HCKU/Software/dxsubfilter.
 #pragma once
 
+#include "SubtitleCoreEnumerations.h"
+
 namespace DXSubFilter
 {
 	extern const wchar_t* DXSUBFILTER_SUBKEY_NAME;
+
+	extern SubtitleCore::SubtitleCoreConfigurationData g_SubtitleCoreConfigData;
 
 	// Registry functions. 
 

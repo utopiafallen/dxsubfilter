@@ -36,7 +36,7 @@ namespace SubtitleCore
 		unsigned int m_LineMarginTop;
 		unsigned int m_LineMarginBottom;
 
-		// Text formatting. Color code is stored and interpreted as BGR (so R is LSB since
+		// Text formatting. Color code is stored and interpreted as ABGR (so R is LSB since
 		// we're little-endian).
 		unsigned int m_FontPrimaryFillColor;
 		unsigned int m_FontSecondaryFillColor;
@@ -45,10 +45,24 @@ namespace SubtitleCore
 		unsigned int m_FontBorderWidth;
 		unsigned int m_FontShadowDepth;
 		unsigned int m_FontSize;
-		unsigned int m_FontColor;
 		std::wstring m_FontName;
 
 		//Font code page, script and style support TBD.
+
+		// Number of subtitles to buffer for rendering ahead of video playback
+		unsigned int m_SubtitleBufferSize;
+
+		// Default constructor will initialize this struct to default values
+		SubtitleCoreConfigurationData() : m_LineAlignment(LA_BOTTOMMIDDLE), m_LineMarginLeft(20),
+			m_LineMarginRight(20), m_LineMarginTop(20), m_LineMarginBottom(20),
+			m_FontPrimaryFillColor(0xFFFFFFFF), m_FontSecondaryFillColor(0xFFFFFFFF),
+			m_FontOutlineColor(0xFF000000), m_FontShadowColor(0xFF000000),
+			m_FontBorderWidth(2), m_FontShadowDepth(2),
+			m_FontSize(18),
+			m_FontName(L"Tahoma"),
+			m_SubtitleBufferSize(0)
+		{
+		}
 	};
 };
 

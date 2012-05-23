@@ -70,6 +70,7 @@ namespace DXSubFilter
 
 		bool IsExternalSubtitlesLoaded() const { return m_bExternalSubtitlesLoaded; }
 	protected: // Data
+		friend class CDXSubFilter;
 
 		// Flagged to true if we loaded external subtitles
 		bool m_bExternalSubtitlesLoaded;

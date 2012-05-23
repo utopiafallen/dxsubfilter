@@ -70,7 +70,7 @@ namespace SubtitleCore
 
 		// Stores GetSubtitlePictureCount number of SubtitlePicture pointers into the passed in
 		// preallocated array of SubtitlePicture pointers.
-		virtual void GetSubtitlePicture(SubtitlePicture** ppOutSubPics) = 0;
+		virtual void GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePicture** ppOutSubPics) = 0;
 
 	protected:
 		SubtitleType m_SubtitleType;

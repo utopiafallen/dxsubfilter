@@ -14,6 +14,7 @@
 
 #include "stdafx.h"
 #include "dxsubfilter_uuids.h"
+#include "registryhelpers.h"
 
 namespace DXSubFilter
 {
@@ -53,6 +54,7 @@ namespace DXSubFilter
 	{
 	public: // Functions
 		static CUnknown* WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT* phr);
+		//static void CALLBACK Loading(BOOL bLoading, const CLSID* rclsid);
 	
 		CDXSubFilter(LPUNKNOWN pUnk);
 		virtual ~CDXSubFilter();
@@ -123,8 +125,14 @@ namespace DXSubFilter
 		BYTE* m_pAlignedBuffer;
 		size_t m_uAlignedBufferLength;
 
+		// Used to supplement tStart from CBaseFilter to allow us to calculate current playback
+		// time without needing to query the filter graph manager, which can lead to deadlocks.
 		REFERENCE_TIME m_rtStart, m_rtEnd;
 		double m_dPlaybackRate;
+
+		// Store subtitle core settings we loaded in from the registry. We just copy the results
+		// from g_SubtitleCoreConfigData which should have been populated during DLL loading.
+		SubtitleCore::SubtitleCoreConfigurationData m_SubCoreConfigData;
 
 	protected: // Functions
 

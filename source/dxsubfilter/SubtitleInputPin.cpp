@@ -129,7 +129,7 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 	}
 
 	// Initialize a vector to numWChars of junk data that will get overwritten by MultiByteToWideChar
-	std::vector<wchar_t> wchData (numWChars, L'A');
+	std::vector<wchar_t> wchData(numWChars, L'A');
 	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, &wchData[0], numWChars);
 	
 	// Always add null terminator.

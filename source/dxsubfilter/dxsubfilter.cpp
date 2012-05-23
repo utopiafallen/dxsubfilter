@@ -11,6 +11,7 @@ using namespace DXSubFilter;
 // see dxsubfilter.h for the class definition
 CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk) 
 	: CTransformFilter(DXSUBFILTER_NAME, pUnk, CLSID_DXSubFilter)
+	, m_SubCoreConfigData(g_SubtitleCoreConfigData)
 	, m_pInputSubtitlePin(nullptr)
 	, m_pAlignedBuffer(nullptr)
 	, m_uAlignedBufferLength(0)

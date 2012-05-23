@@ -37,6 +37,11 @@ std::shared_ptr<ISubtitleRenderer> SubtitleRendererFactory::CreateSubtitleRender
 	// If the user hasn't passed us all the data we need, return nullptr.
 	if (m_SubCoreConfig && m_VideoInfo)
 	{
+		if (m_SubtitleRendererCache.size() < static_cast<size_t>(type))
+		{
+			m_SubtitleRendererCache.resize(type);
+		}
+
 		switch(type)
 		{
 		case SBT_SRT:

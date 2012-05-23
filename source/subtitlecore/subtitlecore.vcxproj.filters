@@ -40,6 +40,9 @@
     <ClInclude Include="SubtitlePicture.h">
       <Filter>Source Files\Interface</Filter>
     </ClInclude>
+    <ClInclude Include="SRTSubtitleRenderer.h">
+      <Filter>Source Files\SRT</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -47,6 +50,9 @@
     </ClCompile>
     <ClCompile Include="SubtitleRendererFactory.cpp">
       <Filter>Source Files\Interface</Filter>
+    </ClCompile>
+    <ClCompile Include="SRTSubtitleRenderer.cpp">
+      <Filter>Source Files\SRT</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

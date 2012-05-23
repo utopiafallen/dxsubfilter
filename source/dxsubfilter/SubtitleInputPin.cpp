@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "dxsubfilter_uuids.h"
 #include "SubtitleInputPin.h"
+#include "SubtitleRendererFactory.h"
 
 #include "dxsubfilter.h"
 
@@ -11,6 +12,7 @@ CSubtitleInputPin::CSubtitleInputPin(LPCWSTR pObjectName, CDXSubFilter *pTransfo
 	: CTransformInputPin(pObjectName, pTransformFilter, phr, pName)
 	, m_bExternalSubtitlesLoaded(false)
 	, m_CurrentSubtitleType(SubtitleCore::SBT_NONE)
+	, m_SubtitleRenderer(nullptr)
 {
 
 }
@@ -38,6 +40,17 @@ HRESULT CSubtitleInputPin::CheckMediaType(const CMediaType* mtIn)
 			hr = S_OK;
 		}
 	}
+	else
+	{
+		// It should be safe at this point to create a subtitle renderer because the video
+		// stream is connected to the transform filter first (we assume...). We also don't
+		// have to worry about format changes with external subtitles so as long as
+		// m_SubtitleRenderer is not null, we don't have to do anything.
+		if (!m_SubtitleRenderer)
+		{
+			m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::getSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
+		}
+	}
 
     return hr;
 }
@@ -62,6 +75,11 @@ STDMETHODIMP CSubtitleInputPin::Disconnect()
 HRESULT CSubtitleInputPin::CompleteConnect(IPin *pReceivePin)
 {
 	m_CurrentSubtitleType = MapMediaTypeToSubtitleType(m_mt);
+
+	// At this point, the video stream should have already connected and CDXSubFilter should have
+	// already setup the factory with all the necessary data so we don't check for null return.
+	m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::getSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
+	
 	return CTransformInputPin::CompleteConnect(pReceivePin);
 }
 
@@ -111,32 +129,37 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 	lBufferLength = pSample->GetActualDataLength();
 	lBufferSize = pSample->GetSize();
 
-	// Append null terminator to character stream if we can.
-	// Convert UTF-8 to UTF-16 since using MBCS is kind of ugly. This is actually kind of confusing
-	// so this may need to be revisited
-	int numWChars = 0;
-	if (lBufferSize > lBufferLength)
+	if (m_CurrentSubtitleType == SubtitleCore::SBT_ASS || 
+		m_CurrentSubtitleType == SubtitleCore::SBT_SSA ||
+		m_CurrentSubtitleType == SubtitleCore::SBT_SRT)
 	{
-		pBufferIn[lBufferLength] = '\0';
-		lBufferLength += 1;
+		// Append null terminator to character stream if we can.
+		// Convert UTF-8 to UTF-16 since using MBCS is kind of ugly. This is actually kind of confusing
+		// so this may need to be revisited
+		int numWChars = 0;
+		if (lBufferSize > lBufferLength)
+		{
+			pBufferIn[lBufferLength] = '\0';
+			lBufferLength += 1;
 
-		numWChars = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, NULL, 0);
-	}
-	else
-	{
-		// Couldn't add null terminator so account for that by adding 1 to required buffer size.
-		numWChars = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, NULL, 0) + 1;
-	}
+			numWChars = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, NULL, 0);
+		}
+		else
+		{
+			// Couldn't add null terminator so account for that by adding 1 to required buffer size.
+			numWChars = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, NULL, 0) + 1;
+		}
 
-	// Initialize a vector to numWChars of junk data that will get overwritten by MultiByteToWideChar
-	std::vector<wchar_t> wchData(numWChars, L'A');
-	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, &wchData[0], numWChars);
+		// Initialize a vector to numWChars of junk data that will get overwritten by MultiByteToWideChar
+		std::vector<wchar_t> wchData(numWChars, L'A');
+		MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<char*>(pBufferIn), lBufferLength, &wchData[0], numWChars);
 	
-	// Always add null terminator.
-	wchData[numWChars-1] = L'\0';
+		// Always add null terminator.
+		wchData[numWChars-1] = L'\0';
 
-	// The sample should just be a single line of subtitle data
-	std::wstring s(&wchData[0]);
+		// The sample should just be a single line of subtitle data
+		std::wstring s(&wchData[0]);
+	}
 
 	return S_OK;
 }
@@ -199,7 +222,6 @@ void CSubtitleInputPin::LoadExternalSubtitles()
 					m_CurrentSubtitleType = MapFileExtToSubtitleType(SubtitleCore::SubtitleFileExtensions[i]);
 
 					// Load subtitle data
-
 
 					subtitleFile.close();
 

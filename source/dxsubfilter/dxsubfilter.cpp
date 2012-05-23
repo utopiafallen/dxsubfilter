@@ -1,4 +1,4 @@
-// dxsubfilter.cpp : Defines the exported functions for the DLL application.
+// DirectShow filter for SubtitleCore
 //
 
 #include "stdafx.h"
@@ -7,8 +7,6 @@
 
 using namespace DXSubFilter;
 
-// This is the constructor of a class that has been exported.
-// see dxsubfilter.h for the class definition
 CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk) 
 	: CTransformFilter(DXSUBFILTER_NAME, pUnk, CLSID_DXSubFilter)
 	, m_SubCoreConfigData(g_SubtitleCoreConfigData)

@@ -64,6 +64,16 @@ namespace SubtitleCore
 		{
 		}
 	};
+
+	// This struct stores relevant video info needed to properly render subtitles.
+	struct VideoInfo
+	{
+		// Given in pixels
+		size_t Width;
+		size_t Height;
+
+		VideoInfo() : Width(0), Height(0) {}
+	};
 };
 
 #endif

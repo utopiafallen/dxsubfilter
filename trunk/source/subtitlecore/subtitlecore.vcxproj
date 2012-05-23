@@ -60,6 +60,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <PrecompiledHeaderOutputFile>$(IntDir)pch\$(TargetName).pch</PrecompiledHeaderOutputFile>
       <TreatWarningAsError>true</TreatWarningAsError>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -103,12 +104,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="ISubtitleRenderer.h" />
+    <ClInclude Include="SRTSubtitleRenderer.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SubtitleCoreEnumerations.h" />
     <ClInclude Include="SubtitlePicture.h" />
     <ClInclude Include="SubtitleRendererFactory.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="SRTSubtitleRenderer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

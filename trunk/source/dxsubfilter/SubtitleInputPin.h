@@ -69,6 +69,7 @@ namespace DXSubFilter
 		void LoadExternalSubtitles();
 
 		bool IsExternalSubtitlesLoaded() const { return m_bExternalSubtitlesLoaded; }
+
 	protected: // Data
 		friend class CDXSubFilter;
 
@@ -77,6 +78,9 @@ namespace DXSubFilter
 
 		// Set to the current subtitle type that we're rendering
 		SubtitleCore::SubtitleType m_CurrentSubtitleType;
+
+		// Corresponding subtitle renderer based on our current subtitle type
+		std::shared_ptr<SubtitleCore::ISubtitleRenderer> m_SubtitleRenderer;
 
 	protected: // Functions
 

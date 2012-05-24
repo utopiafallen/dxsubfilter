@@ -18,14 +18,21 @@ namespace SubtitleCore
 	//	instances are properly deleted when their references are gone. The class is implemented
 	//	as a singleton. 
 	//
-	//	This class is thread-safe.
+	//	This class is thread-safe. However, initialization of the singleton must be done only once
+	//	and in a thread-safe manner, and is left up to the user to do so.
 	class SubtitleRendererFactory
 	{
 	public:
-		// Use eager initialization for thread-safety purposes
-		static SubtitleRendererFactory* getSingleton()
+		// Must call InitializeSingleton() before calling this.
+		static SubtitleRendererFactory* GetSingleton()
 		{
 			return instance;
+		}
+
+		// Must be called only once and only by one thread.
+		static void InitializeSingleton()
+		{
+			instance = new SubtitleRendererFactory();
 		}
 
 		// Returns a shared_ptr to a subtitle renderer that was created based on the SubtitleType

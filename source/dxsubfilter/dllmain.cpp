@@ -3,6 +3,7 @@
 #include "registryhelpers.h"
 #include "dxsubfilter_uuids.h"
 #include "dxsubfilter.h"
+#include "SubtitleRendererFactory.h"
 
 //------------------------------------------------------------------------------
 // Global filter information for proper DirectShow registration
@@ -135,6 +136,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 	switch (ul_reason_for_call)
 	{
 	case DLL_PROCESS_ATTACH:
+		// Initialize SubtitleRendererFactory. Must only be done once.
+		SubtitleCore::SubtitleRendererFactory::InitializeSingleton();
 		break;
 	case DLL_THREAD_ATTACH:
 		break;

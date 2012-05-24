@@ -48,7 +48,7 @@ HRESULT CSubtitleInputPin::CheckMediaType(const CMediaType* mtIn)
 		// m_SubtitleRenderer is not null, we don't have to do anything.
 		if (!m_SubtitleRenderer)
 		{
-			m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::getSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
+			m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::GetSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
 		}
 	}
 
@@ -78,7 +78,7 @@ HRESULT CSubtitleInputPin::CompleteConnect(IPin *pReceivePin)
 
 	// At this point, the video stream should have already connected and CDXSubFilter should have
 	// already setup the factory with all the necessary data so we don't check for null return.
-	m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::getSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
+	m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::GetSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
 	
 	return CTransformInputPin::CompleteConnect(pReceivePin);
 }

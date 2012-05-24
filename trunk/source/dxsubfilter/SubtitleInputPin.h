@@ -29,11 +29,13 @@ namespace DXSubFilter
 		// CTransformInputPin overrides.
 		//===================================================
 
-		// Overridden to handle subtitle stream switching (maybe?)
+		// Overridden to handle subtitle stream switching. These are not called if external
+		// subtitle are loaded as this pin will reject all incoming connection attempts in that
+		// case.
 		STDMETHODIMP Disconnect();
 		HRESULT CompleteConnect(IPin *pReceivePin);
 
-		// Overridden to do skip transform filter calls so seeking doesn't break.
+		// Overridden to skip transform filter calls so seeking doesn't break.
 		STDMETHODIMP BeginFlush(void);
 		STDMETHODIMP EndFlush(void);
 		STDMETHODIMP NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate);
@@ -75,6 +77,9 @@ namespace DXSubFilter
 
 		// Flagged to true if we loaded external subtitles
 		bool m_bExternalSubtitlesLoaded;
+
+		// The contents of the external subtitles
+		std::vector<std::wstring> m_ExternalSubtitleScript;
 
 		// Set to the current subtitle type that we're rendering
 		SubtitleCore::SubtitleType m_CurrentSubtitleType;

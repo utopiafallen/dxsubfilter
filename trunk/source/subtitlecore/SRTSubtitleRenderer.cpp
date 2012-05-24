@@ -11,7 +11,7 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 	m_SubtitleType = SBT_SRT;
 }
 
-bool SRTSubtitleRenderer::ParseScript(const std::wstring& script)
+bool SRTSubtitleRenderer::ParseScript(const std::vector<std::wstring>& script)
 {
 	UNREFERENCED_PARAMETER(script);
 	return true;

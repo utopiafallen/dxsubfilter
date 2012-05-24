@@ -4,6 +4,7 @@
 #include "stdafx.h"
 #include "dxsubfilter.h"
 #include "SubtitleInputPin.h"
+#include "SubtitleRendererFactory.h"
 
 using namespace DXSubFilter;
 

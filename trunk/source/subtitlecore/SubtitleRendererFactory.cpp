@@ -4,14 +4,14 @@
 
 using namespace SubtitleCore;
 
-SubtitleRendererFactory* SubtitleRendererFactory::instance = new SubtitleRendererFactory();
+SubtitleRendererFactory* SubtitleRendererFactory::instance = 0;
 
 SubtitleRendererFactory::SubtitleRendererFactory() 
 	: m_SubCoreConfig(nullptr)
 	, m_VideoInfo(nullptr)
 {
 	if (FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory), 
-		reinterpret_cast<IUnknown**>(m_DWriteFactory))))
+		reinterpret_cast<IUnknown**>(&m_DWriteFactory))))
 	{
 		m_DWriteFactory = nullptr;
 	}

@@ -57,6 +57,8 @@ std::shared_ptr<ISubtitleRenderer> SubtitleRendererFactory::CreateSubtitleRender
 			m_SubtitleRendererCache.resize(type);
 		}
 
+		int index = type - 1;
+
 		switch(type)
 		{
 		case SBT_SRT:
@@ -65,16 +67,16 @@ std::shared_ptr<ISubtitleRenderer> SubtitleRendererFactory::CreateSubtitleRender
 				{
 					std::shared_ptr<ISubtitleRenderer> result = std::make_shared<SRTSubtitleRenderer>(*m_SubCoreConfig, *m_VideoInfo, m_DWriteFactory);
 
-					m_SubtitleRendererCache[type].push_back(result);
+					m_SubtitleRendererCache[index].push_back(result);
 					return result;
 				}
 				else
 				{
-					if (m_SubtitleRendererCache[type].size() == 0)
+					if (m_SubtitleRendererCache[index].size() == 0)
 					{
-						m_SubtitleRendererCache[type].push_back(std::make_shared<SRTSubtitleRenderer>(*m_SubCoreConfig, *m_VideoInfo, m_DWriteFactory));
+						m_SubtitleRendererCache[index].push_back(std::make_shared<SRTSubtitleRenderer>(*m_SubCoreConfig, *m_VideoInfo, m_DWriteFactory));
 					}
-					return m_SubtitleRendererCache[type][0];
+					return m_SubtitleRendererCache[index][0];
 				}
 			}
 		default:

@@ -22,6 +22,9 @@ namespace SubtitleCore
 	//	as there may be initialization data (margins, video image size, etc.) that need to be 
 	//	given to a renderer. If the factory is used, only the factory needs to have its data 
 	//	updated and the user can then simply request a new renderer.
+	//
+	//	Be aware that in general, ISubtitleRenderer implementations are not thread-safe. Each
+	//	thread should own their own subtitle renderer.
 	class __declspec(novtable) ISubtitleRenderer
 	{
 	public:

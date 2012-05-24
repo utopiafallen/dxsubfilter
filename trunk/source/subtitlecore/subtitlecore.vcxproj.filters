@@ -23,6 +23,9 @@
     <Filter Include="Source Files\VOBSUB">
       <UniqueIdentifier>{da9ac246-5144-44a2-bf24-4ffbfa7333ad}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Utilities">
+      <UniqueIdentifier>{357f2918-fd9f-4ebd-9674-eb8ccbfe9085}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">

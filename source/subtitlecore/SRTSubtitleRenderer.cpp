@@ -8,7 +8,7 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 	, m_VideoInfo(vidInfo)
 	, m_DWriteFactory(dwFactory)
 {
-
+	m_SubtitleType = SBT_SRT;
 }
 
 bool SRTSubtitleRenderer::ParseScript(const std::wstring& script)

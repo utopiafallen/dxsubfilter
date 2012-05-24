@@ -25,6 +25,9 @@ CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk)
 	// Just in case the CTransformFilter constructor doesn't default these to null
 	m_pInput = nullptr;
 	m_pOutput = nullptr;
+
+	// Update SubtitleRendererFactory with new configuration data read in from registry
+	SubtitleCore::SubtitleRendererFactory::GetSingleton()->SetSubtitleCoreConfig(m_SubCoreConfigData);
 }
 
 CDXSubFilter::~CDXSubFilter()
@@ -732,6 +735,12 @@ void CDXSubFilter::ComputeStrides()
 			// Should never reach here
 		}
 	}
+
+	// Update SubtitleRendererFactory with new video info
+	SubtitleCore::VideoInfo vidInfo;
+	vidInfo.Height = bmiIn.biHeight;
+	vidInfo.Width = bmiIn.biWidth;
+	SubtitleCore::SubtitleRendererFactory::GetSingleton()->SetVideoInfo(vidInfo);
 }
 
 void CDXSubFilter::CorrectVideoMediaType(CMediaType* pMediaType) const

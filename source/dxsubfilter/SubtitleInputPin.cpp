@@ -49,6 +49,7 @@ HRESULT CSubtitleInputPin::CheckMediaType(const CMediaType* mtIn)
 		if (!m_SubtitleRenderer)
 		{
 			m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::GetSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
+			m_SubtitleRenderer->ParseScript(m_ExternalSubtitleScript);
 		}
 	}
 
@@ -129,6 +130,7 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 	lBufferLength = pSample->GetActualDataLength();
 	lBufferSize = pSample->GetSize();
 
+	// The data should only be interpreted as a string for text-based subtitle formats.
 	if (m_CurrentSubtitleType == SubtitleCore::SBT_ASS || 
 		m_CurrentSubtitleType == SubtitleCore::SBT_SSA ||
 		m_CurrentSubtitleType == SubtitleCore::SBT_SRT)
@@ -214,7 +216,7 @@ void CSubtitleInputPin::LoadExternalSubtitles()
 				std::wstring sNewFileName = sFileNameNoExt + 
 											SubtitleCore::SubtitleFileExtensions[i];
 
-				std::ifstream subtitleFile;
+				std::wifstream subtitleFile;
 				subtitleFile.open(sNewFileName);
 				if (subtitleFile.is_open())
 				{
@@ -222,6 +224,13 @@ void CSubtitleInputPin::LoadExternalSubtitles()
 					m_CurrentSubtitleType = MapFileExtToSubtitleType(SubtitleCore::SubtitleFileExtensions[i]);
 
 					// Load subtitle data
+					std::wstring line;
+
+					while(std::getline(subtitleFile, line).eof() == false)
+					{
+						m_ExternalSubtitleScript.push_back(line);
+					}
+					m_ExternalSubtitleScript.shrink_to_fit();
 
 					subtitleFile.close();
 

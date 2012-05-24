@@ -31,10 +31,11 @@ namespace SubtitleCore
 
 		// For text-based subtitle renderers, this allows the renderer to parse a complete script.
 		// The entire script is expected to be encoded in UTF-16 and contained entirely in the
-		// wstring input.
+		// vector input with each entry in the vector corresponding to a new line in the original
+		// text file.
 		//
 		// Returns true if the renderer succeeded in parsing the script. False otherwise.
-		virtual bool ParseScript(const std::wstring& script) = 0;
+		virtual bool ParseScript(const std::vector<std::wstring>& script) = 0;
 
 		// For text-based subtitle renderers, this allows the renderer to parse a single line of
 		// subtitle data. Input line is expected to be UTF-16 encoded and null-terminated.

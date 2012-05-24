@@ -57,6 +57,10 @@ namespace SubtitleCore
 		virtual bool ParseData(const unsigned char* data, ptrdiff_t offset) = 0;
 		virtual bool ParseData(const unsigned char* data, ptrdiff_t startOffset, ptrdiff_t endOffset) = 0;
 
+		// Signal the subtitle renderer that any data it has stored and/or processed should be 
+		// cleared. Most likely needed when switching subtitle streams.
+		virtual void Invalidate() = 0;
+
 		// Get the subtitle type that this renderer is responsible for
 		SubtitleType GetRendererSubtitleType() const { return m_SubtitleType; }
 

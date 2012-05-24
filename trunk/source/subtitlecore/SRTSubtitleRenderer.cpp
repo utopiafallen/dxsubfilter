@@ -55,6 +55,11 @@ bool SRTSubtitleRenderer::ParseData(const unsigned char* data, ptrdiff_t startOf
 	return false;
 }
 
+void SRTSubtitleRenderer::Invalidate()
+{
+
+}
+
 size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 {
 	UNREFERENCED_PARAMETER(rtNow);

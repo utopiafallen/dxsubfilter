@@ -12,7 +12,8 @@ namespace SubtitleCore
 	class SRTSubtitleRenderer : public ISubtitleRenderer
 	{
 	public:
-		SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, VideoInfo& vidInfo);
+		// All constructor parameters are expected to be valid.
+		SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, VideoInfo& vidInfo, IDWriteFactory* dwFactory);
 
 		//==================================================================
 		// ISubtitleRenderer implementation. See ISubtitleRenderer for info
@@ -38,6 +39,7 @@ namespace SubtitleCore
 	private:
 		SubtitleCoreConfigurationData m_SubCoreConfig;
 		VideoInfo m_VideoInfo;
+		IDWriteFactory* m_DWriteFactory;
 	};
 };
 

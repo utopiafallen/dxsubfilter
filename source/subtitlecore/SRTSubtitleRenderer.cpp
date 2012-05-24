@@ -3,9 +3,10 @@
 
 using namespace SubtitleCore;
 
-SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, VideoInfo& vidInfo)
+SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, VideoInfo& vidInfo, IDWriteFactory* dwFactory)
 	: m_SubCoreConfig(config)
 	, m_VideoInfo(vidInfo)
+	, m_DWriteFactory(dwFactory)
 {
 
 }

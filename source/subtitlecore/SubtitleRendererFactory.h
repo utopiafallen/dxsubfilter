@@ -4,6 +4,8 @@
 
 #include <memory>
 #include <vector>
+#include <DWrite.h>
+#include <ppl.h>
 #include "SubtitleCoreEnumerations.h"
 #include "ISubtitleRenderer.h"
 
@@ -14,26 +16,22 @@ namespace SubtitleCore
 	//	are then cached and reused on subsequent calls unless the user requests specifically
 	//	for a new instance. This class returns shared_ptr to ensure that all created
 	//	instances are properly deleted when their references are gone. The class is implemented
-	//	as a singleton.
+	//	as a singleton. 
+	//
+	//	This class is thread-safe.
 	class SubtitleRendererFactory
 	{
 	public:
+		// Use eager initialization for thread-safety purposes
 		static SubtitleRendererFactory* getSingleton()
 		{
-			if (instance)
-			{
-				return instance;
-			}
-			else
-			{
-				instance = new SubtitleRendererFactory();
-				return instance;
-			}
+			return instance;
 		}
 
 		// Returns a shared_ptr to a subtitle renderer that was created based on the SubtitleType
 		// passed in. If bUniqueInstance was set to true, this is to a new instance of the relevant
-		// subtitle renderer. Otherwise, this will be a pointer to a cached result.
+		// subtitle renderer. Otherwise, this will be a pointer to A CACHED RESULT. Users must
+		// be aware of this behaviour in multithreaded environments.
 		//
 		// Returns a nullptr if it was unable to create a subtitle renderer. This may be due to
 		// unsupported type passed in or because the factory has not been initialized with all the
@@ -61,6 +59,11 @@ namespace SubtitleCore
 
 		std::shared_ptr<SubtitleCoreConfigurationData> m_SubCoreConfig;
 		std::shared_ptr<VideoInfo> m_VideoInfo;
+
+		// Shared amongst all renderers.
+		IDWriteFactory* m_DWriteFactory;
+
+		Concurrency::reader_writer_lock m_RWLockFactory;
 	};
 };
 #endif

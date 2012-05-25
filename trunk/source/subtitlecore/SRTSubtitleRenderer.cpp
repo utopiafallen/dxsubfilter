@@ -19,13 +19,7 @@ bool SRTSubtitleRenderer::ParseScript(const std::vector<std::wstring>& script)
 	for (size_t i = 0; i < script.size(); i++)
 	{
 		// Ignore lines which are just the subtitle entry number
-		try
-		{
-			// If this doesn't throw an exception, continue
-			boost::lexical_cast<int>(script[i]);
-			continue;
-		}
-		catch(boost::bad_lexical_cast e)
+		if (script[i].find_first_not_of(L"0123456789") != std::wstring::npos)
 		{
 			// This should be a timestamp
 			if (CheckLineIsTimestamp(script[i]))
@@ -82,24 +76,10 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 	}
 	else
 	{
-		// See if this entry already exists
-		for (auto it = subtitle_list.begin(); it != subtitle_list.end(); ++it)
-		{
-			if (it->EndTime == rtEnd)
-			{
-				entry = &(*it);
-				break;
-			}
-		}
+		subtitle_list.push_back(SRTSubtitleEntry());
 
-		// Entry did not exist so add it
-		if (!entry)
-		{
-			subtitle_list.push_back(SRTSubtitleEntry());
-
-			entry = &subtitle_list[subtitle_list.size() - 1];
-			entry->EndTime = rtEnd;
-		}
+		entry = &subtitle_list[subtitle_list.size() - 1];
+		entry->EndTime = rtEnd;
 	}
 
 	std::wstring finalLine;
@@ -170,15 +150,13 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 		startPos = closeBracketPos+1;
 	}
 
-	// No supporting tags found so just copy original line over
-	if (finalLine.empty())
+	if (startPos != line.size() - 1)
 	{
-		entry->Text = line;
+		// Copy remainder line
+		finalLine += line.substr(startPos);
 	}
-	else
-	{
-		entry->Text = finalLine;
-	}
+
+	entry->Text = finalLine;
 
 	return true;
 

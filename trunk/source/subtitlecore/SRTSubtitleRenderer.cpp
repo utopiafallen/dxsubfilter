@@ -1,5 +1,8 @@
 #include "stdafx.h"
 #include "SRTSubtitleRenderer.h"
+#include "SRTSubtitleEntry.h"
+
+#include "TimeConversion.h"
 
 using namespace SubtitleCore;
 
@@ -13,13 +16,91 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 
 bool SRTSubtitleRenderer::ParseScript(const std::vector<std::wstring>& script)
 {
-	UNREFERENCED_PARAMETER(script);
+	for (size_t i = 0; i < script.size(); i++)
+	{
+		// Ignore lines which are just the subtitle entry number
+		try
+		{
+			// If this doesn't throw an exception, continue
+			boost::lexical_cast<int>(script[i]);
+			continue;
+		}
+		catch(boost::bad_lexical_cast e)
+		{
+			// This should be a timestamp
+			if (CheckLineIsTimestamp(script[i]))
+			{
+				REFERENCE_TIME rtStart, rtEnd;
+
+				ComputeTimestamp(script[i], rtStart, rtEnd);
+
+				// Parse lines until we reach an empty line which delineates the start of a new
+				// subtitle block
+				size_t index = i+1;
+				while (script[index].empty() == false)
+				{
+					ParseLine(script[index], rtStart, rtEnd);
+					++index;
+				}
+
+				// Move overall script parsing position to start of the next subtitle block
+				i = index+1;
+			}
+			else
+			{
+				// Something bad happened
+				return false;
+			}
+		}
+	}
+
 	return true;
 }
 
 bool SRTSubtitleRenderer::ParseLine(const std::wstring& line)
 {
 	UNREFERENCED_PARAMETER(line);
+	return false;
+}
+
+bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtStart, REFERENCE_TIME rtEnd)
+{
+	SRTSubtitleEntry* entry = nullptr;
+
+	auto& subtitle_list = m_SubtitleMap[rtStart];
+
+	if (subtitle_list.size() == 0)
+	{
+		// Subtitle list with this start time was empty so add a new entry
+		subtitle_list.push_back(SRTSubtitleEntry());
+
+		entry = &subtitle_list[0];
+		entry->EndTime = rtEnd;
+		entry->Text = line;
+	}
+	else
+	{
+		// See if this entry already exists
+		for (auto it = subtitle_list.begin(); it != subtitle_list.end(); ++it)
+		{
+			if (it->EndTime == rtEnd)
+			{
+				entry = &(*it);
+				break;
+			}
+		}
+
+		// Entry did not exist so add it
+		if (!entry)
+		{
+			subtitle_list.push_back(SRTSubtitleEntry());
+
+			entry = &subtitle_list[subtitle_list.size() - 1];
+			entry->EndTime = rtEnd;
+			entry->Text = line;
+		}
+	}
+
 	return true;
 }
 
@@ -58,7 +139,7 @@ bool SRTSubtitleRenderer::ParseData(const unsigned char* data, ptrdiff_t startOf
 
 void SRTSubtitleRenderer::Invalidate()
 {
-
+	m_SubtitleMap.clear();
 }
 
 size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
@@ -71,4 +152,64 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 {
 	UNREFERENCED_PARAMETER(rtNow);
 	UNREFERENCED_PARAMETER(ppOutSubPics);
+}
+
+bool SRTSubtitleRenderer::CheckLineIsTimestamp(const std::wstring& line)
+{
+	return (line.find(L"-->") != std::wstring::npos &&
+		line.find(L":") != std::wstring::npos && 
+		line.find(L",") != std::wstring::npos);
+}
+
+void SRTSubtitleRenderer::ComputeTimestamp(const std::wstring& line, REFERENCE_TIME& rtStart, REFERENCE_TIME& rtEnd)
+{
+	size_t startPos, endPos;
+	size_t hours, minutes, seconds, milliseconds;
+
+	startPos = 0;
+
+	// Get hours
+	endPos = line.find(L":");
+	hours = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+
+	// Get minutes
+	startPos = endPos + 1;
+	endPos = line.find(L":", startPos);
+	minutes = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+
+	// Get seconds
+	startPos = endPos + 1;
+	endPos = line.find(L",", startPos);
+	seconds = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+
+	// Get milliseconds
+	startPos = endPos + 1;
+	endPos = line.find(L" ", startPos);
+	milliseconds = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+
+	// Compute starting time
+	rtStart = SubtitleCoreUtilities::ConvertTimeToReferenceTime(hours, minutes, seconds, milliseconds);
+
+	// Move to ending timestamp
+	startPos = line.find(L" ", endPos+1) + 1;
+
+	// Get hours
+	endPos = line.find(L":", startPos);
+	hours = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+
+	// Get minutes
+	startPos = endPos + 1;
+	endPos = line.find(L":", startPos);
+	minutes = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+
+	// Get seconds
+	startPos = endPos + 1;
+	endPos = line.find(L",", startPos);
+	seconds = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+
+	// Get milliseconds
+	startPos = endPos + 1;
+	milliseconds = boost::lexical_cast<size_t>(line.substr(startPos));
+
+	rtEnd = SubtitleCoreUtilities::ConvertTimeToReferenceTime(hours, minutes, seconds, milliseconds);
 }

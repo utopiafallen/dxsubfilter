@@ -21,6 +21,7 @@ namespace DXSubFilter
 	const wchar_t* REGVALUE_SUBTITLE_FONT_SHADOW_DEPTH_NAME = L"SubtitleFontShadowDepth";
 	const wchar_t* REGVALUE_SUBTITLE_FONT_SIZE_NAME = L"SubtitleFontSize";
 	const wchar_t* REGVALUE_SUBTITLE_FONTNAME_NAME = L"SubtitleFontName";
+	const wchar_t* REGVALUE_SUBTITLE_FONT_STYLE_NAME = L"SubtitleFontStyle";
 
 	// Global subtitle core configuration settings
 	SubtitleCore::SubtitleCoreConfigurationData g_SubtitleCoreConfigData;

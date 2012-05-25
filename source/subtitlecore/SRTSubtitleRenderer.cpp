@@ -34,17 +34,20 @@ bool SRTSubtitleRenderer::ParseScript(const std::vector<std::wstring>& script)
 
 				ComputeTimestamp(script[i], rtStart, rtEnd);
 
-				// Parse lines until we reach an empty line which delineates the start of a new
+				// Merge lines until we reach an empty line which delineates the start of a new
 				// subtitle block
+				std::wstring mergedLine;
 				size_t index = i+1;
 				while (script[index].empty() == false)
 				{
-					ParseLine(script[index], rtStart, rtEnd);
+					mergedLine += script[index] + L"\n";
 					++index;
 				}
-
 				// Move overall script parsing position to start of the next subtitle block
 				i = index+1;
+
+				// Parse merged line
+				ParseLine(mergedLine, rtStart, rtEnd);
 			}
 			else
 			{
@@ -76,7 +79,6 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 
 		entry = &subtitle_list[0];
 		entry->EndTime = rtEnd;
-		entry->Text = line;
 	}
 	else
 	{
@@ -97,11 +99,89 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 
 			entry = &subtitle_list[subtitle_list.size() - 1];
 			entry->EndTime = rtEnd;
-			entry->Text = line;
 		}
 	}
 
+	std::wstring finalLine;
+
+	// Check for supported HTML tags
+	size_t startPos, openBracketPos, closeBracketPos;
+	size_t finalStartPos, finalEndPos;
+	std::vector<std::wstring> tagStack;
+
+	startPos = 0;
+
+	while ((openBracketPos = line.find(L"<", startPos)) != std::wstring::npos)
+	{
+		finalStartPos = finalLine.size();
+		finalLine += line.substr(startPos, openBracketPos - startPos);
+		finalEndPos = finalLine.size();
+
+		if (finalEndPos != finalStartPos)
+		{
+			SRTSubtitleEntry::TextRangeFormat trf;
+
+			trf.Range.length = finalEndPos - finalStartPos;
+			trf.Range.startPosition = finalStartPos;
+			trf.Style = m_SubCoreConfig.m_FontStyle;
+			trf.Weight = m_SubCoreConfig.m_FontWeight;
+			trf.Strikethrough = FALSE;
+			trf.Underline = FALSE;
+
+			for (auto it = tagStack.begin(); it != tagStack.end(); ++it)
+			{
+				if ((*it).compare(L"b") == 0)
+				{
+					trf.Weight = DWRITE_FONT_WEIGHT_BOLD;
+				}
+				else if ((*it).compare(L"i") == 0)
+				{
+					trf.Style = DWRITE_FONT_STYLE_ITALIC;
+				}
+				else if ((*it).compare(L"u") == 0)
+				{
+					trf.Underline = TRUE;
+				}
+				else if ((*it).compare(L"s") == 0)
+				{
+					trf.Strikethrough = TRUE;
+				}
+			}
+
+			entry->SubTextFormat.push_back(trf);
+		}
+
+		// Find close bracket
+		closeBracketPos = line.find(L">", openBracketPos);
+
+		std::wstring tag = line.substr(openBracketPos+1, closeBracketPos - openBracketPos - 1);
+
+		// Is this a closing tag?
+		if (tag.find(L"/") != std::wstring::npos)
+		{
+			// Malformed scripts are just going to break
+			tagStack.pop_back();
+		}
+		else
+		{
+			tagStack.push_back(tag);
+		}
+
+		startPos = closeBracketPos+1;
+	}
+
+	// No supporting tags found so just copy original line over
+	if (finalLine.empty())
+	{
+		entry->Text = line;
+	}
+	else
+	{
+		entry->Text = finalLine;
+	}
+
 	return true;
+
 }
 
 bool SRTSubtitleRenderer::ParseFormatHeader(const std::wstring& header)

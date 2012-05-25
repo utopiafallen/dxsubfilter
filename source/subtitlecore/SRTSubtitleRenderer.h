@@ -66,6 +66,15 @@ namespace SubtitleCore
 		// Parsed subtitle info, keyed on subtitle start time.
 		std::unordered_map<REFERENCE_TIME, std::vector<SRTSubtitleEntry>> m_SubtitleMap;
 
+		struct TagParsingInfo
+		{
+			std::wstring tag;
+			size_t tagStartOpenBracket;
+			size_t tagStartCloseBracket;
+			size_t tagEndOpenBracket;
+			size_t tagEndCloseBracket;
+		};
+
 	private: // Functions
 
 		// Returns whether or not a line is a timestamp

@@ -14,8 +14,9 @@ namespace SubtitleCore
 		{
 			DWRITE_TEXT_RANGE Range;
 			DWRITE_FONT_WEIGHT Weight;
-			DWRITE_FONT_STRETCH Stretch;
 			DWRITE_FONT_STYLE Style;
+			BOOL Underline;
+			BOOL Strikethrough;
 		};
 
 		// Contains spans where text formatting differs from main formatting, e.g.

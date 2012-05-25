@@ -40,8 +40,10 @@ namespace SubtitleCore
 		// For text-based subtitle renderers, this allows the renderer to parse a single line of
 		// subtitle data. Input line is expected to be UTF-16 encoded and null-terminated.
 		//
-		// Returns true if the renderer succeeded in parsing the line. False otherwise.
+		// Returns true if the renderer succeeded in parsing the line. False otherwise. Overloaded
+		// to allow caller to specify start and stop times of the subtitle line.
 		virtual bool ParseLine(const std::wstring& line) = 0;
+		virtual bool ParseLine(const std::wstring& line, REFERENCE_TIME rtStart, REFERENCE_TIME rtEnd) = 0;
 
 		// Allows the renderer to parse whatever subtitle header/format data is defined by that
 		// subtitle type. Overloaded to allow passing in of a byte-stream for non-text-based

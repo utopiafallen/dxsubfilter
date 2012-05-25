@@ -5,6 +5,7 @@
 #pragma once
 
 #include <string>
+#include <DWrite.h>
 
 namespace SubtitleCore
 {
@@ -46,8 +47,11 @@ namespace SubtitleCore
 		unsigned int m_FontShadowDepth;
 		unsigned int m_FontSize;
 		std::wstring m_FontName;
+		DWRITE_FONT_WEIGHT m_FontWeight;
+		DWRITE_FONT_STYLE m_FontStyle;
+		DWRITE_FONT_STRETCH m_FontStretch;
 
-		//Font code page, script and style support TBD.
+		//Font code page, script support TBD.
 
 		// Number of subtitles to buffer for rendering ahead of video playback
 		unsigned int m_SubtitleBufferSize;
@@ -57,9 +61,12 @@ namespace SubtitleCore
 			m_LineMarginRight(20), m_LineMarginTop(20), m_LineMarginBottom(20),
 			m_FontPrimaryFillColor(0xFFFFFFFF), m_FontSecondaryFillColor(0xFFFFFFFF),
 			m_FontOutlineColor(0xFF000000), m_FontShadowColor(0xFF000000),
-			m_FontBorderWidth(2), m_FontShadowDepth(2),
+			m_FontBorderWidth(3), m_FontShadowDepth(3),
 			m_FontSize(18),
 			m_FontName(L"Tahoma"),
+			m_FontWeight(DWRITE_FONT_WEIGHT_BOLD),
+			m_FontStyle(DWRITE_FONT_STYLE_NORMAL),
+			m_FontStretch(DWRITE_FONT_STRETCH_NORMAL),
 			m_SubtitleBufferSize(0)
 		{
 		}

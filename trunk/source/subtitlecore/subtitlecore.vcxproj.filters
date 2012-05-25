@@ -49,7 +49,7 @@
     <ClInclude Include="SRTSubtitleEntry.h">
       <Filter>Source Files\SRT</Filter>
     </ClInclude>
-    <ClInclude Include="TimeConversion.h">
+    <ClInclude Include="Conversions.h">
       <Filter>Source Files\Utilities</Filter>
     </ClInclude>
   </ItemGroup>

@@ -110,7 +110,7 @@
     <ClInclude Include="SubtitleCoreEnumerations.h" />
     <ClInclude Include="SubtitlePicture.h" />
     <ClInclude Include="SubtitleRendererFactory.h" />
-    <ClInclude Include="TimeConversion.h" />
+    <ClInclude Include="Conversions.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SRTSubtitleRenderer.cpp" />

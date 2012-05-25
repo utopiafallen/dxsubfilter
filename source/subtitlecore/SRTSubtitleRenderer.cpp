@@ -16,38 +16,35 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 
 bool SRTSubtitleRenderer::ParseScript(const std::vector<std::wstring>& script)
 {
-	for (size_t i = 0; i < script.size(); i++)
+	// Assume that first line in script is subtitle number and skip it.
+	for (size_t i = 1; i < script.size(); i++)
 	{
-		// Ignore lines which are just the subtitle entry number
-		if (script[i].find_first_not_of(L"0123456789") != std::wstring::npos)
+		// This should be a timestamp
+		if (CheckLineIsTimestamp(script[i]))
 		{
-			// This should be a timestamp
-			if (CheckLineIsTimestamp(script[i]))
+			REFERENCE_TIME rtStart, rtEnd;
+
+			ComputeTimestamp(script[i], rtStart, rtEnd);
+
+			// Merge lines until we reach an empty line which delineates the start of a new
+			// subtitle block
+			std::wstring mergedLine;
+			size_t index = i+1;
+			while (script[index].empty() == false)
 			{
-				REFERENCE_TIME rtStart, rtEnd;
-
-				ComputeTimestamp(script[i], rtStart, rtEnd);
-
-				// Merge lines until we reach an empty line which delineates the start of a new
-				// subtitle block
-				std::wstring mergedLine;
-				size_t index = i+1;
-				while (script[index].empty() == false)
-				{
-					mergedLine += script[index] + L"\n";
-					++index;
-				}
-				// Move overall script parsing position to start of the next subtitle block
-				i = index+1;
-
-				// Parse merged line
-				ParseLine(mergedLine, rtStart, rtEnd);
+				mergedLine += script[index] + L"\n";
+				++index;
 			}
-			else
-			{
-				// Something bad happened
-				return false;
-			}
+			// Move overall script parsing position to start of the next subtitle block
+			i = index+1;
+
+			// Parse merged line
+			ParseLine(mergedLine, rtStart, rtEnd);
+		}
+		else
+		{
+			// Something bad happened
+			return false;
 		}
 	}
 
@@ -73,13 +70,38 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 
 		entry = &subtitle_list[0];
 		entry->EndTime = rtEnd;
+
+		// Add this to set of timespans
+		m_SubtitleTimeSpans.insert(std::make_pair(rtStart, rtEnd));
 	}
 	else
 	{
-		subtitle_list.push_back(SRTSubtitleEntry());
+		// Check to make sure this isn't a duplicate
+		bool bDuplicate = false;
+		for (auto it = subtitle_list.begin(); it != subtitle_list.end(); ++it)
+		{
+			if (it->Text.compare(line) == 0)
+			{
+				bDuplicate = true;
+				break;
+			}
+		}
 
-		entry = &subtitle_list[subtitle_list.size() - 1];
-		entry->EndTime = rtEnd;
+		if (bDuplicate)
+		{
+			// Do nothing
+			return true;
+		}
+		else
+		{
+			subtitle_list.push_back(SRTSubtitleEntry());
+
+			entry = &subtitle_list[subtitle_list.size() - 1];
+			entry->EndTime = rtEnd;
+
+			// Add this to set of timespans
+			m_SubtitleTimeSpans.insert(std::make_pair(rtStart, rtEnd));
+		}
 	}
 
 	std::wstring finalLine;
@@ -158,6 +180,11 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 
 	entry->Text = finalLine;
 
+	if (m_SubCoreConfig.m_SubtitleBufferSize > 0)
+	{
+		// Spawn task to render subtitle
+	}
+
 	return true;
 
 }
@@ -202,14 +229,73 @@ void SRTSubtitleRenderer::Invalidate()
 
 size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 {
-	UNREFERENCED_PARAMETER(rtNow);
-	return 0U;
+	// Check to see if rtNow falls within previously created list of valid time spans
+	bool bStillWithinSpans = false;
+	for (auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end(); ++it)
+	{
+		if (it->first <= rtNow && it->second >= rtNow)
+		{
+			bStillWithinSpans = true;
+			break;
+		}
+	}
+
+	if (!bStillWithinSpans)
+	{
+		m_ValidSubtitleTimes.clear();
+
+		// Get closest subtitle time spans
+		auto searchValue = std::make_pair(rtNow - 100, rtNow + 100);
+
+		// Find first time span greater than current time
+		auto result = m_SubtitleTimeSpans.upper_bound(searchValue);
+
+		// Search backwards to find the first timespan that encompasses current time
+		auto start = result;
+		for (;start != m_SubtitleTimeSpans.begin(); --start)
+		{
+			if (start->first <= rtNow && start->second >= rtNow)
+			{
+				break;
+			}
+		}
+	
+		// Need to specifically check begin since we skip it
+		if (m_SubtitleTimeSpans.begin()->first <= rtNow &&
+			m_SubtitleTimeSpans.begin()->second >= rtNow)
+		{
+			start = m_SubtitleTimeSpans.begin();
+		}
+
+		// Add list of start times to valid subtitle times
+		for (auto it = start; it != result; ++it)
+		{
+			m_ValidSubtitleTimes.push_back(*it);
+		}
+	}
+
+	size_t count = 0;
+	if (m_SubCoreConfig.m_SubtitleBufferSize > 0)
+	{
+		// Just check the rendered subtitles
+		//for (auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end()
+	}
+	else
+	{
+		for (auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end(); ++it)
+		{
+			count += m_SubtitleMap[it->first].size();
+		}
+	}
+
+	return count;
 }
 
 void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePicture** ppOutSubPics)
 {
 	UNREFERENCED_PARAMETER(rtNow);
-	UNREFERENCED_PARAMETER(ppOutSubPics);
+
+	*ppOutSubPics = nullptr;
 }
 
 bool SRTSubtitleRenderer::CheckLineIsTimestamp(const std::wstring& line)

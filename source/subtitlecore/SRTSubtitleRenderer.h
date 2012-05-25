@@ -6,6 +6,7 @@
 #include "stdafx.h"
 #include "ISubtitleRenderer.h"
 #include "SubtitleCoreEnumerations.h"
+#include "SubtitlePicture.h"
 #include "SRTSubtitleEntry.h"
 
 namespace SubtitleCore
@@ -60,20 +61,24 @@ namespace SubtitleCore
 		// DirectWrite and Direct2D members
 		IDWriteFactory* m_DWriteFactory;
 		ID2D1Factory* m_pD2DFactory;
-		ID2D1HwndRenderTarget* pRT;
-		ID2D1SolidColorBrush* pBlackBrush;
+		ID2D1BitmapRenderTarget* m_pRT;
+		ID2D1SolidColorBrush* m_pSolidColorBrush;
 
 		// Parsed subtitle info, keyed on subtitle start time.
 		std::unordered_map<REFERENCE_TIME, std::vector<SRTSubtitleEntry>> m_SubtitleMap;
 
-		struct TagParsingInfo
+		std::set<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_SubtitleTimeSpans;
+
+		// Valid time spans that encompass the most recently requested playback time
+		std::vector<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_ValidSubtitleTimes;
+
+		// Rendered subtitles
+		struct RenderedSubtitles
 		{
-			std::wstring tag;
-			size_t tagStartOpenBracket;
-			size_t tagStartCloseBracket;
-			size_t tagEndOpenBracket;
-			size_t tagEndCloseBracket;
+			SubtitlePicture SubPic;
+			REFERENCE_TIME EndTime;
 		};
+		std::unordered_map<REFERENCE_TIME, std::vector<RenderedSubtitles>> m_RenderedSubtitles;
 
 	private: // Functions
 

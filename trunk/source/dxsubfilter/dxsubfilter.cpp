@@ -447,8 +447,9 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	// NOTE TO SELF: Handle VFR video? That'll probably fuck with animation.
 
 	// Get subtitle data and overlay onto video frame. Or maybe pass in raw video data into 
-	// subtitle rendering core and let it do the overlaying? We'll see... (NB: Use output buffer
-	// video data)
+	// subtitle rendering core and let it do the overlaying? We'll see...
+	size_t subpicCount = m_pInputSubtitlePin->m_SubtitleRenderer->GetSubtitlePictureCount(rtNow);
+	UNREFERENCED_PARAMETER(subpicCount);
 
 	// Copy buffer to output
 	CopyBuffer(m_pAlignedBuffer, pBufferOut, lBufferLength);

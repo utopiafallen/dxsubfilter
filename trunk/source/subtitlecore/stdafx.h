@@ -32,6 +32,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <tuple>
+#include <set>
 
 // Boost
 #include <boost/circular_buffer.hpp>

@@ -28,6 +28,7 @@ namespace SubtitleCore
 	public:
 		// All constructor parameters are expected to be valid.
 		SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, VideoInfo& vidInfo, IDWriteFactory* dwFactory);
+		~SRTSubtitleRenderer();
 
 		//==================================================================
 		// ISubtitleRenderer implementation. See ISubtitleRenderer for info
@@ -59,10 +60,15 @@ namespace SubtitleCore
 		VideoInfo m_VideoInfo;
 
 		// DirectWrite and Direct2D members
-		IDWriteFactory* m_DWriteFactory;
+		IDWriteFactory* m_pDWriteFactory;
+		IWICImagingFactory* m_pWICFactory;
 		ID2D1Factory* m_pD2DFactory;
-		ID2D1BitmapRenderTarget* m_pRT;
+		IDWriteTextFormat* m_pDWTextFormat;
+		ID2D1RenderTarget* m_pRT;
+		IWICBitmap* m_pWICBitmap;
 		ID2D1SolidColorBrush* m_pSolidColorBrush;
+		ID3D10Device1* m_pDevice;
+		ID3D10Texture2D* m_pTexture;
 
 		// Parsed subtitle info, keyed on subtitle start time.
 		std::unordered_map<REFERENCE_TIME, std::vector<SRTSubtitleEntry>> m_SubtitleMap;

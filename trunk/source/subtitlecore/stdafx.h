@@ -12,12 +12,16 @@
 #include <emmintrin.h>
 #include <xmmintrin.h>
 
+// WIC
+#include <wincodec.h>
+
 // Direct2D
 #include "D2D1.h"
 #include "D2D1Helper.h"
 
 // DirectWrite
 #include "DWrite.h"
+
 
 // Microsoft Concurrency Runtime
 #include <ppl.h>
@@ -35,10 +39,12 @@
 #include <set>
 
 // Boost
+#pragma warning( push )
+#pragma warning( disable : 4005) // Disable macro redefinition warning due to wincodec.h
 #include <boost/circular_buffer.hpp>
 #include <boost/multi_array.hpp>
 #include <boost/multi_index_container.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
-
+#pragma warning( pop )
 #endif

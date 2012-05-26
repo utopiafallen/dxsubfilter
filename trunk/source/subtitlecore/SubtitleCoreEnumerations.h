@@ -47,6 +47,7 @@ namespace SubtitleCore
 		unsigned int m_FontShadowDepth;
 		unsigned int m_FontSize;
 		std::wstring m_FontName;
+		std::wstring m_SystemLocale;	// Should we support this? How does this affect us?
 		DWRITE_FONT_WEIGHT m_FontWeight;
 		DWRITE_FONT_STYLE m_FontStyle;
 		DWRITE_FONT_STRETCH m_FontStretch;
@@ -57,17 +58,18 @@ namespace SubtitleCore
 		unsigned int m_SubtitleBufferSize;
 
 		// Default constructor will initialize this struct to default values
-		SubtitleCoreConfigurationData() : m_LineAlignment(LA_BOTTOMMIDDLE), m_LineMarginLeft(20),
-			m_LineMarginRight(20), m_LineMarginTop(20), m_LineMarginBottom(20),
-			m_FontPrimaryFillColor(0xFFFFFFFF), m_FontSecondaryFillColor(0xFFFFFFFF),
-			m_FontOutlineColor(0xFF000000), m_FontShadowColor(0xFF000000),
-			m_FontBorderWidth(3), m_FontShadowDepth(3),
-			m_FontSize(18),
-			m_FontName(L"Tahoma"),
-			m_FontWeight(DWRITE_FONT_WEIGHT_BOLD),
-			m_FontStyle(DWRITE_FONT_STYLE_NORMAL),
-			m_FontStretch(DWRITE_FONT_STRETCH_NORMAL),
-			m_SubtitleBufferSize(0)
+		SubtitleCoreConfigurationData() : m_LineAlignment(LA_BOTTOMMIDDLE), m_LineMarginLeft(20)
+			, m_LineMarginRight(20), m_LineMarginTop(20), m_LineMarginBottom(20)
+			, m_FontPrimaryFillColor(0xFFFFFFFF), m_FontSecondaryFillColor(0xFFFFFFFF)
+			, m_FontOutlineColor(0xFF000000), m_FontShadowColor(0xFF000000)
+			, m_FontBorderWidth(3), m_FontShadowDepth(3)
+			, m_FontSize(18)
+			, m_SystemLocale(L"en-us")
+			, m_FontName(L"Tahoma")
+			, m_FontWeight(DWRITE_FONT_WEIGHT_BOLD)
+			, m_FontStyle(DWRITE_FONT_STYLE_NORMAL)
+			, m_FontStretch(DWRITE_FONT_STRETCH_NORMAL)
+			, m_SubtitleBufferSize(0)
 		{
 		}
 	};

@@ -2,18 +2,147 @@
 #include "SRTSubtitleRenderer.h"
 #include "SRTSubtitleEntry.h"
 
-#include "TimeConversion.h"
+#include "Conversions.h"
+#include "DirectXHelpers.h"
 
 using namespace SubtitleCore;
 
 SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, VideoInfo& vidInfo, IDWriteFactory* dwFactory)
 	: m_SubCoreConfig(config)
 	, m_VideoInfo(vidInfo)
-	, m_DWriteFactory(dwFactory)
+	, m_pDWriteFactory(dwFactory)
+	, m_pDWTextFormat(nullptr)
+	, m_pD2DFactory(nullptr)
+	, m_pRT(nullptr)
+	, m_pWICBitmap(nullptr)
+	, m_pSolidColorBrush(nullptr)
+	, m_pDevice(nullptr)
+	, m_pTexture(nullptr)
+	, m_pWICFactory(nullptr)
 {
 	m_SubtitleType = SBT_SRT;
+
+	HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &m_pD2DFactory);
+
+	hr = CoCreateInstance(
+        CLSID_WICImagingFactory,
+        NULL,
+        CLSCTX_INPROC_SERVER,
+        IID_IWICImagingFactory,
+        reinterpret_cast<void **>(&m_pWICFactory)
+        );
+
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pWICFactory->CreateBitmap(
+			m_VideoInfo.Width,
+            m_VideoInfo.Height,
+            GUID_WICPixelFormat32bppPBGRA,
+            WICBitmapCacheOnLoad,
+            &m_pWICBitmap
+            );
+	}
+
+	if (SUCCEEDED(hr))
+    {
+		D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+				D2D1_RENDER_TARGET_TYPE_DEFAULT,
+				D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+				96,
+				96);
+        hr = m_pD2DFactory->CreateWicBitmapRenderTarget(
+            m_pWICBitmap,
+            &props,
+            &m_pRT
+			);
+    }
+
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pDWriteFactory->CreateTextFormat(m_SubCoreConfig.m_FontName.c_str(),
+								NULL,
+								m_SubCoreConfig.m_FontWeight,
+								m_SubCoreConfig.m_FontStyle,
+								m_SubCoreConfig.m_FontStretch,
+								SubtitleCoreUtilities::ConvertFontPointToDIP(m_SubCoreConfig.m_FontSize),
+								m_SubCoreConfig.m_SystemLocale.c_str(),
+								&m_pDWTextFormat);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pDWTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pDWTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+	}
+
+	//hr = D3D10CreateDevice1(NULL, D3D10_DRIVER_TYPE_HARDWARE, NULL, 
+	//	D3D10_CREATE_DEVICE_BGRA_SUPPORT, D3D10_FEATURE_LEVEL_10_1, D3D10_1_SDK_VERSION, &m_pDevice);
+
+	//if (SUCCEEDED(hr))
+	//{
+	//	D3D10_TEXTURE2D_DESC texDesc;
+	//	ZeroMemory(&texDesc, sizeof(texDesc));
+	//	texDesc.ArraySize = 1;
+	//	texDesc.BindFlags = D3D10_BIND_RENDER_TARGET;
+	//	texDesc.CPUAccessFlags = 0;
+	//	texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	//	texDesc.Height = m_VideoInfo.Height;
+	//	texDesc.Width = m_VideoInfo.Width;
+	//	texDesc.MipLevels = 1;
+	//	texDesc.MiscFlags = 0;
+	//	texDesc.SampleDesc.Count = 1;
+	//	texDesc.SampleDesc.Quality = 0;
+	//	texDesc.Usage = D3D10_USAGE_DEFAULT;
+
+	//	hr = m_pDevice->CreateTexture2D(&texDesc, NULL, &m_pTexture);
+	//}
+
+	//IDXGISurface* pDXGISurface = nullptr;
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = m_pTexture->QueryInterface(&pDXGISurface);
+	//}
+
+	//if (SUCCEEDED(hr))
+	//{
+	//	// Create a D2D render target which can draw into our offscreen D3D
+	//	// surface. Given that we use a constant size for the texture, we
+	//	// fix the DPI at 96.
+	//	D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
+	//			D2D1_RENDER_TARGET_TYPE_DEFAULT,
+	//			D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
+	//			96,
+	//			96);
+
+	//	hr = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(	pDXGISurface,
+	//														&props,
+	//														&m_pRT);
+	//}
+
+	//SafeRelease(&pDXGISurface);
+
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pRT->CreateSolidColorBrush(ConvertABGRToD2DCOLORF(m_SubCoreConfig.m_FontPrimaryFillColor), 
+											&m_pSolidColorBrush);
+	}
 }
 
+SRTSubtitleRenderer::~SRTSubtitleRenderer()
+{
+	SafeRelease(&m_pDWTextFormat);
+	SafeRelease(&m_pD2DFactory);
+	SafeRelease(&m_pRT);
+	SafeRelease(&m_pWICBitmap);
+	SafeRelease(&m_pSolidColorBrush);
+	SafeRelease(&m_pDevice);
+	SafeRelease(&m_pTexture);
+	SafeRelease(&m_pWICFactory);
+}
 bool SRTSubtitleRenderer::ParseScript(const std::vector<std::wstring>& script)
 {
 	// Assume that first line in script is subtitle number and skip it.
@@ -294,6 +423,106 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePicture** ppOutSubPics)
 {
 	UNREFERENCED_PARAMETER(rtNow);
+
+	if (m_SubCoreConfig.m_SubtitleBufferSize > 0)
+	{
+		// Check already rendered results
+	}
+	else
+	{
+		m_RenderedSubtitles.clear();
+		m_pRT->BeginDraw();
+		m_pRT->Clear();
+		for(auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end(); ++it)
+		{
+			std::vector<SRTSubtitleEntry> subtitleEntries = m_SubtitleMap[it->first];
+
+			for(auto subIt = subtitleEntries.begin(); subIt != subtitleEntries.end(); ++subIt)
+			{
+				IDWriteTextLayout* pTextLayout = nullptr;
+
+				HRESULT hr = m_pDWriteFactory->CreateTextLayout(subIt->Text.c_str(), 
+																subIt->Text.length(),
+																m_pDWTextFormat,
+																static_cast<float>(m_VideoInfo.Width),
+																static_cast<float>(m_VideoInfo.Height),
+																&pTextLayout);
+				if (SUCCEEDED(hr))
+				{
+					for (auto formatIt = subIt->SubTextFormat.begin(); formatIt != subIt->SubTextFormat.end(); ++formatIt)
+					{
+						pTextLayout->SetFontWeight(formatIt->Weight, formatIt->Range);
+						pTextLayout->SetFontStyle(formatIt->Style, formatIt->Range);
+						pTextLayout->SetUnderline(formatIt->Underline, formatIt->Range);
+						pTextLayout->SetStrikethrough(formatIt->Strikethrough, formatIt->Range);
+					}
+
+					D2D_POINT_2F origin;
+					origin.x = 0.0f;
+					origin.y = 0.0f;
+
+					m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
+				}
+
+				SafeRelease(&pTextLayout);
+			}
+		}
+		HRESULT hr = m_pRT->EndDraw();
+
+		IWICBitmapEncoder *pEncoder = NULL;
+		IWICBitmapFrameEncode *pFrameEncode = NULL;
+		IWICStream *pStream = NULL;
+		if (SUCCEEDED(hr))
+		{
+			hr = m_pWICFactory->CreateStream(&pStream);
+		}
+		WICPixelFormatGUID format = GUID_WICPixelFormatDontCare;
+		if (SUCCEEDED(hr))
+		{
+			static const WCHAR filename[] = L"C:\\Users\\Xin Liu\\Desktop\\output.png";
+			hr = pStream->InitializeFromFilename(filename, GENERIC_WRITE);
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = m_pWICFactory->CreateEncoder(GUID_ContainerFormatPng, NULL, &pEncoder);
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = pEncoder->CreateNewFrame(&pFrameEncode, NULL);
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameEncode->Initialize(NULL);
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameEncode->SetSize(m_VideoInfo.Width, m_VideoInfo.Height);
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameEncode->SetPixelFormat(&format);
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameEncode->WriteSource(m_pWICBitmap, NULL);
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameEncode->Commit();
+		}
+		if (SUCCEEDED(hr))
+		{
+			hr = pEncoder->Commit();
+		}
+
+		SafeRelease(&pStream);
+		SafeRelease(&pEncoder);
+		SafeRelease(&pFrameEncode);
+	}
 
 	*ppOutSubPics = nullptr;
 }

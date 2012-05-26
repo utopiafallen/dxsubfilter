@@ -449,6 +449,12 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	// Get subtitle data and overlay onto video frame. Or maybe pass in raw video data into 
 	// subtitle rendering core and let it do the overlaying? We'll see...
 	size_t subpicCount = m_pInputSubtitlePin->m_SubtitleRenderer->GetSubtitlePictureCount(rtNow);
+	if (subpicCount > 0)
+	{
+		std::vector<SubtitleCore::SubtitlePicture*> subpics(subpicCount, nullptr);
+		m_pInputSubtitlePin->m_SubtitleRenderer->GetSubtitlePicture(rtNow, &subpics[0]);
+	}
+
 	UNREFERENCED_PARAMETER(subpicCount);
 
 	// Copy buffer to output

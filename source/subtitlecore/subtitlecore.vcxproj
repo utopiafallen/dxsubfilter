@@ -67,7 +67,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalDependencies>d2d1.lib;dwrite.lib</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d10_1.lib;dwrite.lib;Windowscodecs.lib</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(DXSDK_DIR)\Lib\$(ProcessorArchitecture);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -96,13 +96,14 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <Lib>
-      <AdditionalDependencies>d2d1.lib;dwrite.lib</AdditionalDependencies>
+      <AdditionalDependencies>d2d1.lib;d3d10_1.lib;dwrite.lib;Windowscodecs.lib</AdditionalDependencies>
     </Lib>
     <Lib>
       <AdditionalLibraryDirectories>$(DXSDK_DIR)\Lib\$(ProcessorArchitecture);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="DirectXHelpers.h" />
     <ClInclude Include="ISubtitleRenderer.h" />
     <ClInclude Include="SRTSubtitleEntry.h" />
     <ClInclude Include="SRTSubtitleRenderer.h" />

@@ -25,6 +25,7 @@ namespace SubtitleCore
 
 		std::wstring Text;
 
+		REFERENCE_TIME StartTime;
 		REFERENCE_TIME EndTime;
 
 		SRTSubtitleEntry() : EndTime(0) {}

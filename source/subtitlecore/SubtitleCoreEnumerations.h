@@ -10,7 +10,8 @@
 namespace SubtitleCore
 {
 	enum SubtitleType { SBT_ASS, SBT_SSA, SBT_SRT, SBT_VOBSUB, SBT_NONE };
-	enum SubtitlePictureFormat { SBPF_RGBA32 };
+	enum SubtitlePictureFormat { SBPF_PBGRA32, // Pre-multiplied alpha
+								SBPF_RGBA32 };
 
 	static const std::wstring SubtitleFileExtensions[] = { 
 		L".ass", 
@@ -61,7 +62,7 @@ namespace SubtitleCore
 		SubtitleCoreConfigurationData() : m_LineAlignment(LA_BOTTOMMIDDLE), m_LineMarginLeft(20)
 			, m_LineMarginRight(20), m_LineMarginTop(20), m_LineMarginBottom(20)
 			, m_FontPrimaryFillColor(0xFFFFFFFF), m_FontSecondaryFillColor(0xFFFFFFFF)
-			, m_FontOutlineColor(0xFF000000), m_FontShadowColor(0xFF000000)
+			, m_FontOutlineColor(0xFF000000), m_FontShadowColor(0x80000000)
 			, m_FontBorderWidth(3), m_FontShadowDepth(3)
 			, m_FontSize(18)
 			, m_SystemLocale(L"en-us")

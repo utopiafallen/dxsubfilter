@@ -1,5 +1,4 @@
-// Convenience function to convert hours, minutes, seconds and milliseconds to REFERENCE_TIME
-// values (100ns units)
+// Convenience function to convert between units
 
 #include "strmif.h"
 

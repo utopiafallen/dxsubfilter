@@ -7,9 +7,13 @@
 
 using namespace SubtitleCore;
 
+static const float fSpacer = 7.0f;
+
 SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, VideoInfo& vidInfo, IDWriteFactory* dwFactory)
 	: m_SubCoreConfig(config)
 	, m_VideoInfo(vidInfo)
+	, m_fHorizontalMargin(static_cast<float>(config.m_LineMarginLeft + config.m_LineMarginRight))
+	, m_fVerticalMargin(static_cast<float>(config.m_LineMarginBottom + config.m_LineMarginTop))
 	, m_pDWriteFactory(dwFactory)
 	, m_pDWTextFormat(nullptr)
 	, m_pD2DFactory(nullptr)
@@ -31,6 +35,11 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
         IID_IWICImagingFactory,
         reinterpret_cast<void **>(&m_pWICFactory)
         );
+
+	float fDpiX, fDpiY;
+	m_pD2DFactory->GetDesktopDpi(&fDpiX, &fDpiY);
+	m_fDPIScaleX = fDpiX / 96.0f;
+	m_fDPIScaleY = fDpiY / 96.0f;
 
 	if (SUCCEEDED(hr))
 	{
@@ -69,14 +78,28 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 								&m_pDWTextFormat);
 	}
 
+	DWRITE_TEXT_ALIGNMENT textAlignment;
+	DWRITE_PARAGRAPH_ALIGNMENT paraAlignment;
+
+	SubtitleCoreUtilities::ConvertDLAToDWRiteEnums(m_SubCoreConfig.m_LineAlignment, textAlignment, paraAlignment);
+
 	if (SUCCEEDED(hr))
 	{
-		hr = m_pDWTextFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+		hr = m_pDWTextFormat->SetTextAlignment(textAlignment);
 	}
 
 	if (SUCCEEDED(hr))
 	{
-		hr = m_pDWTextFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_CENTER);
+		hr = m_pDWTextFormat->SetParagraphAlignment(paraAlignment);
+	}
+
+	if (paraAlignment == DWRITE_PARAGRAPH_ALIGNMENT_CENTER || paraAlignment == DWRITE_PARAGRAPH_ALIGNMENT_FAR)
+	{
+		m_fSubtitlePlacementDirection = -1.0f;
+	}
+	else
+	{
+		m_fSubtitlePlacementDirection = 1.0f;
 	}
 
 	//hr = D3D10CreateDevice1(NULL, D3D10_DRIVER_TYPE_HARDWARE, NULL, 
@@ -198,6 +221,7 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 		subtitle_list.push_back(SRTSubtitleEntry());
 
 		entry = &subtitle_list[0];
+		entry->StartTime = rtStart;
 		entry->EndTime = rtEnd;
 
 		// Add this to set of timespans
@@ -206,31 +230,23 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 	else
 	{
 		// Check to make sure this isn't a duplicate
-		bool bDuplicate = false;
 		for (auto it = subtitle_list.begin(); it != subtitle_list.end(); ++it)
 		{
 			if (it->Text.compare(line) == 0)
 			{
-				bDuplicate = true;
-				break;
+				// Do nothing
+				return true;
 			}
 		}
 
-		if (bDuplicate)
-		{
-			// Do nothing
-			return true;
-		}
-		else
-		{
-			subtitle_list.push_back(SRTSubtitleEntry());
+		subtitle_list.push_back(SRTSubtitleEntry());
 
-			entry = &subtitle_list[subtitle_list.size() - 1];
-			entry->EndTime = rtEnd;
+		entry = &subtitle_list[subtitle_list.size() - 1];
+		entry->StartTime = rtStart;
+		entry->EndTime = rtEnd;
 
-			// Add this to set of timespans
-			m_SubtitleTimeSpans.insert(std::make_pair(rtStart, rtEnd));
-		}
+		// Add this to set of timespans
+		m_SubtitleTimeSpans.insert(std::make_pair(rtStart, rtEnd));
 	}
 
 	std::wstring finalLine;
@@ -354,6 +370,9 @@ bool SRTSubtitleRenderer::ParseData(const unsigned char* data, ptrdiff_t startOf
 void SRTSubtitleRenderer::Invalidate()
 {
 	m_SubtitleMap.clear();
+	m_RenderedSubtitles.clear();
+	m_ValidSubtitleTimes.clear();
+	m_SubtitleTimeSpans.clear();
 }
 
 size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
@@ -422,109 +441,187 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 
 void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePicture** ppOutSubPics)
 {
-	UNREFERENCED_PARAMETER(rtNow);
-
-	if (m_SubCoreConfig.m_SubtitleBufferSize > 0)
+	// Check already rendered results and store them into output
+	size_t renderedIndex = 0;
+	std::vector<RenderedSubtitles*> renderedSubsToRemove;
+	std::vector<std::pair<REFERENCE_TIME, REFERENCE_TIME>> subtitleSpansAlreadyRendered;
+	for (auto renderedIt = m_RenderedSubtitles.begin(); renderedIt != m_RenderedSubtitles.end(); ++renderedIt)
 	{
-		// Check already rendered results
-	}
-	else
-	{
-		m_RenderedSubtitles.clear();
-		m_pRT->BeginDraw();
-		m_pRT->Clear();
-		for(auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end(); ++it)
+		if (renderedIt->StartTime <= rtNow && renderedIt->EndTime >= rtNow)
 		{
-			std::vector<SRTSubtitleEntry> subtitleEntries = m_SubtitleMap[it->first];
+			ppOutSubPics[renderedIndex++] = &renderedIt->SubPic;
+
+			auto renderedSpan = std::make_pair(renderedIt->StartTime, renderedIt->EndTime);
+			subtitleSpansAlreadyRendered.push_back(renderedSpan);
+			m_ValidSubtitleTimes.remove(renderedSpan);
+		}
+		else
+		{
+			renderedSubsToRemove.push_back(&(*renderedIt));
+		}
+	}
+
+	// Clear out stale subs
+	for (auto removeIt = renderedSubsToRemove.begin(); removeIt != renderedSubsToRemove.end(); ++removeIt)
+	{
+		m_RenderedSubtitles.remove(*(*removeIt));
+	}
+
+	// Render unrendered timespans
+	HRESULT hr = S_OK;
+	UNREFERENCED_PARAMETER(hr); // hr is only used for debugging purposes
+
+	size_t newSubIndex = renderedIndex;
+	RenderedSubtitles rsub;
+
+	m_pRT->BeginDraw();
+	{
+		m_pRT->Clear();
+
+		D2D_POINT_2F origin;
+
+		// Process the first entry first so we can offset the remaining subtitles properly
+		std::vector<SRTSubtitleEntry> subtitleEntries = 
+			m_SubtitleMap[m_ValidSubtitleTimes.begin()->first];
+
+		IDWriteTextLayout* pTextLayout = nullptr;
+
+		hr = m_pDWriteFactory->CreateTextLayout(subtitleEntries.begin()->Text.c_str(), 
+									subtitleEntries.begin()->Text.length(),
+									m_pDWTextFormat,
+									static_cast<float>(m_VideoInfo.Width) - m_fHorizontalMargin,
+									static_cast<float>(m_VideoInfo.Height) - m_fVerticalMargin,
+									&pTextLayout);
+
+		for (auto formatIt = subtitleEntries.begin()->SubTextFormat.begin(); 
+			formatIt != subtitleEntries.begin()->SubTextFormat.end(); 
+			++formatIt)
+		{
+			pTextLayout->SetFontWeight(formatIt->Weight, formatIt->Range);
+			pTextLayout->SetFontStyle(formatIt->Style, formatIt->Range);
+			pTextLayout->SetUnderline(formatIt->Underline, formatIt->Range);
+			pTextLayout->SetStrikethrough(formatIt->Strikethrough, formatIt->Range);
+		}
+
+		DWRITE_TEXT_METRICS metrics;
+		pTextLayout->GetMetrics(&metrics);
+
+		origin.x = static_cast<float>(m_SubCoreConfig.m_LineMarginLeft);
+		origin.y = static_cast<float>(m_SubCoreConfig.m_LineMarginTop);
+
+		m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
+
+		origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection + m_fVerticalMargin;
+
+		SafeRelease(&pTextLayout);
+
+		int originX, originY;
+		size_t width, height;
+		originX = static_cast<int>(metrics.left + origin.x);
+		originY = static_cast<int>(metrics.top + origin.y);
+		ConvertDIPToPixels(metrics.width, metrics.height, width, height);
+
+		rsub.StartTime = m_ValidSubtitleTimes.begin()->first;
+		rsub.EndTime = m_ValidSubtitleTimes.begin()->second;
+		rsub.SubPic = SubtitlePicture(originX, originY, width, height, width, SBPF_PBGRA32, nullptr);
+			
+		m_RenderedSubtitles.push_back(rsub);
+		ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
+
+		// Process remaining SRT entries for the first time span
+		for(auto subIt = subtitleEntries.begin()+1; subIt != subtitleEntries.end(); ++subIt)
+		{
+			rsub.StartTime = subIt->StartTime;
+			rsub.EndTime = subIt->EndTime;
+			rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin);
+
+			m_RenderedSubtitles.push_back(rsub);
+			ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
+		}
+
+		// Process remaining time spans
+		auto it = m_ValidSubtitleTimes.begin();
+		for(++it; it != m_ValidSubtitleTimes.end(); ++it)
+		{
+			subtitleEntries = m_SubtitleMap[it->first];
 
 			for(auto subIt = subtitleEntries.begin(); subIt != subtitleEntries.end(); ++subIt)
 			{
-				IDWriteTextLayout* pTextLayout = nullptr;
+				rsub.StartTime = subIt->StartTime;
+				rsub.EndTime = subIt->EndTime;
+				rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin);
 
-				HRESULT hr = m_pDWriteFactory->CreateTextLayout(subIt->Text.c_str(), 
-																subIt->Text.length(),
-																m_pDWTextFormat,
-																static_cast<float>(m_VideoInfo.Width),
-																static_cast<float>(m_VideoInfo.Height),
-																&pTextLayout);
-				if (SUCCEEDED(hr))
-				{
-					for (auto formatIt = subIt->SubTextFormat.begin(); formatIt != subIt->SubTextFormat.end(); ++formatIt)
-					{
-						pTextLayout->SetFontWeight(formatIt->Weight, formatIt->Range);
-						pTextLayout->SetFontStyle(formatIt->Style, formatIt->Range);
-						pTextLayout->SetUnderline(formatIt->Underline, formatIt->Range);
-						pTextLayout->SetStrikethrough(formatIt->Strikethrough, formatIt->Range);
-					}
-
-					D2D_POINT_2F origin;
-					origin.x = 0.0f;
-					origin.y = 0.0f;
-
-					m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
-				}
-
-				SafeRelease(&pTextLayout);
+				m_RenderedSubtitles.push_back(rsub);
+				ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
 			}
 		}
-		HRESULT hr = m_pRT->EndDraw();
+	}
+	hr = m_pRT->EndDraw();
 
-		IWICBitmapEncoder *pEncoder = NULL;
-		IWICBitmapFrameEncode *pFrameEncode = NULL;
-		IWICStream *pStream = NULL;
-		if (SUCCEEDED(hr))
-		{
-			hr = m_pWICFactory->CreateStream(&pStream);
-		}
-		WICPixelFormatGUID format = GUID_WICPixelFormatDontCare;
-		if (SUCCEEDED(hr))
-		{
-			static const WCHAR filename[] = L"C:\\Users\\Xin Liu\\Desktop\\output.png";
-			hr = pStream->InitializeFromFilename(filename, GENERIC_WRITE);
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = m_pWICFactory->CreateEncoder(GUID_ContainerFormatPng, NULL, &pEncoder);
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = pEncoder->CreateNewFrame(&pFrameEncode, NULL);
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = pFrameEncode->Initialize(NULL);
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = pFrameEncode->SetSize(m_VideoInfo.Width, m_VideoInfo.Height);
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = pFrameEncode->SetPixelFormat(&format);
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = pFrameEncode->WriteSource(m_pWICBitmap, NULL);
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = pFrameEncode->Commit();
-		}
-		if (SUCCEEDED(hr))
-		{
-			hr = pEncoder->Commit();
-		}
-
-		SafeRelease(&pStream);
-		SafeRelease(&pEncoder);
-		SafeRelease(&pFrameEncode);
+	// Put back rendered timespans into valid timespans
+	for (auto rspan = subtitleSpansAlreadyRendered.begin(); rspan != subtitleSpansAlreadyRendered.end(); ++rspan)
+	{
+		m_ValidSubtitleTimes.push_back(*rspan);
 	}
 
-	*ppOutSubPics = nullptr;
+	// Fill out the data for newly rendered subtitle pictures
+	for (size_t i = renderedIndex; i < newSubIndex; i++)
+	{
+		FillSubtitlePictureData(*ppOutSubPics[i]);
+	}
+
+	IWICBitmapEncoder *pEncoder = NULL;
+	IWICBitmapFrameEncode *pFrameEncode = NULL;
+	IWICStream *pStream = NULL;
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pWICFactory->CreateStream(&pStream);
+	}
+	WICPixelFormatGUID format = GUID_WICPixelFormatDontCare;
+	if (SUCCEEDED(hr))
+	{
+		static const WCHAR filename[] = L"C:\\Users\\Xin Liu\\Desktop\\output.png";
+		hr = pStream->InitializeFromFilename(filename, GENERIC_WRITE);
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pWICFactory->CreateEncoder(GUID_ContainerFormatPng, NULL, &pEncoder);
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = pEncoder->CreateNewFrame(&pFrameEncode, NULL);
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = pFrameEncode->Initialize(NULL);
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = pFrameEncode->SetSize(m_VideoInfo.Width, m_VideoInfo.Height);
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = pFrameEncode->SetPixelFormat(&format);
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = pFrameEncode->WriteSource(m_pWICBitmap, NULL);
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = pFrameEncode->Commit();
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = pEncoder->Commit();
+	}
+	SafeRelease(&pStream);
+	SafeRelease(&pEncoder);
+	SafeRelease(&pFrameEncode);
 }
 
 bool SRTSubtitleRenderer::CheckLineIsTimestamp(const std::wstring& line)
@@ -585,4 +682,81 @@ void SRTSubtitleRenderer::ComputeTimestamp(const std::wstring& line, REFERENCE_T
 	milliseconds = boost::lexical_cast<size_t>(line.substr(startPos));
 
 	rtEnd = SubtitleCoreUtilities::ConvertTimeToReferenceTime(hours, minutes, seconds, milliseconds);
+}
+
+template<typename T>
+void SRTSubtitleRenderer::ConvertDIPToPixels(float dipX, float dipY, T& outX, T& outY)
+{
+	// Round up
+	outX = static_cast<T>(dipX * m_fDPIScaleX + 0.5f);
+	outY = static_cast<T>(dipY * m_fDPIScaleY + 0.5f);
+}
+
+SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& entry, D2D_POINT_2F& origin)
+{
+	IDWriteTextLayout* pTextLayout = nullptr;
+	DWRITE_TEXT_METRICS metrics;
+	HRESULT hr;
+	UNREFERENCED_PARAMETER(hr); // hr is only used for debugging purposes
+
+	hr = m_pDWriteFactory->CreateTextLayout(entry.Text.c_str(), 
+									entry.Text.length(),
+									m_pDWTextFormat,
+									static_cast<float>(m_VideoInfo.Width) - m_fHorizontalMargin,
+									static_cast<float>(m_VideoInfo.Height) - m_fVerticalMargin,
+									&pTextLayout);
+
+	for (auto formatIt = entry.SubTextFormat.begin(); formatIt != entry.SubTextFormat.end(); ++formatIt)
+	{
+		pTextLayout->SetFontWeight(formatIt->Weight, formatIt->Range);
+		pTextLayout->SetFontStyle(formatIt->Style, formatIt->Range);
+		pTextLayout->SetUnderline(formatIt->Underline, formatIt->Range);
+		pTextLayout->SetStrikethrough(formatIt->Strikethrough, formatIt->Range);
+	}
+
+	pTextLayout->GetMetrics(&metrics);
+
+	m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
+
+	// Offset for the next subtitle to be draw after us
+	origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection + m_fVerticalMargin;
+
+	SafeRelease(&pTextLayout);
+
+	int originX, originY;
+	size_t width, height;
+	originX = static_cast<int>(metrics.left + origin.x);
+	originY = static_cast<int>(metrics.top + origin.y);
+	ConvertDIPToPixels(metrics.width, metrics.height, width, height);
+
+	return SubtitlePicture(originX, originY, width, height, width, SBPF_PBGRA32, nullptr);
+}
+
+void SRTSubtitleRenderer::FillSubtitlePictureData(SubtitlePicture& subpic)
+{
+	HRESULT hr;
+	UNREFERENCED_PARAMETER(hr); // hr is only used for debugging purposes
+
+	WICRect rect;
+	rect.X = subpic.m_iOriginX;
+	rect.Y = subpic.m_iOriginY;
+	rect.Height = subpic.m_uHeight;
+	rect.Width = subpic.m_uWidth;
+
+	IWICBitmapLock* pBitmapLock = nullptr;
+	hr = m_pWICBitmap->Lock(&rect, WICBitmapLockRead, &pBitmapLock);
+
+	UINT pcbStride;
+	pBitmapLock->GetStride(&pcbStride);
+
+	size_t byteCount = 0;
+	BYTE* bitmapData = nullptr;
+	pBitmapLock->GetDataPointer(&byteCount, &bitmapData);
+
+	unsigned char* data = static_cast<unsigned char*>(_aligned_malloc(byteCount, 16));
+	
+	memcpy(data, bitmapData, byteCount);
+
+	subpic.m_uStride = pcbStride;
+	subpic.m_Data = std::shared_ptr<unsigned char>(data, SubtitlePicture::Deleter<unsigned char>());
 }

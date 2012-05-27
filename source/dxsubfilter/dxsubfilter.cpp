@@ -455,8 +455,6 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 		m_pInputSubtitlePin->m_SubtitleRenderer->GetSubtitlePicture(rtNow, &subpics[0]);
 	}
 
-	UNREFERENCED_PARAMETER(subpicCount);
-
 	// Copy buffer to output
 	CopyBuffer(m_pAlignedBuffer, pBufferOut, lBufferLength);
 

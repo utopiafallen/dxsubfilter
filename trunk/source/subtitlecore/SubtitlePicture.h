@@ -22,22 +22,58 @@ namespace SubtitleCore
 		int m_iOriginY;
 
 		// Width and height of the image in pixels. It is guaranteed that the
-		size_t m_iWidth;
-		size_t m_iHeight;
+		size_t m_uWidth;
+		size_t m_uHeight;
+
+
+		// Stride m_Data. Measured in bytes.
+		size_t m_uStride;
 
 		// Used to indicate what kind of data is pointed to by the underlying byte-stream.
 		SubtitlePictureFormat m_SubPicFormat;
 
 		// Raw image data. How to interpret this data depends on the SubtitlePictureFormat
-		// specified.
-		unsigned char* m_Data;
+		// specified. Data is guaranteed to be 16-byte aligned.
+		std::shared_ptr<unsigned char> m_Data;
+
+		// Custom deleter for m_Data.
+		template <typename T>
+		struct Deleter
+		{
+			void operator()(T* ptr)
+			{
+				_aligned_free(ptr);
+				ptr = nullptr;
+			}
+		};
 
 		SubtitlePicture() 
 			: m_iOriginX(0), m_iOriginY(0)
-			, m_iWidth(0U), m_iHeight(0U)
-			, m_SubPicFormat(SBPF_RGBA32)
+			, m_uWidth(0U), m_uHeight(0U)
+			, m_uStride(0)
+			, m_SubPicFormat(SBPF_PBGRA32)
 			, m_Data(nullptr)
 		{
+		}
+
+		SubtitlePicture(int originX, int originY, size_t width, size_t height, size_t stride,
+			SubtitlePictureFormat sbpf, unsigned char* data)
+			: m_iOriginX(originX), m_iOriginY(originY)
+			, m_uWidth(width), m_uHeight(height)
+			, m_uStride(stride)
+			, m_SubPicFormat(sbpf)
+			, m_Data(data, Deleter<unsigned char>())
+		{
+		}
+
+		bool operator== (const SubtitlePicture& other)
+		{
+			return m_iOriginX == other.m_iOriginX &&
+				m_iOriginY == other.m_iOriginY &&
+				m_uHeight == other.m_uHeight &&
+				m_uWidth == other.m_uWidth &&
+				m_SubPicFormat == other.m_SubPicFormat &&
+				m_Data == other.m_Data;
 		}
 	};
 };

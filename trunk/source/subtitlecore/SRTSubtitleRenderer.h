@@ -70,21 +70,39 @@ namespace SubtitleCore
 		ID3D10Device1* m_pDevice;
 		ID3D10Texture2D* m_pTexture;
 
+		float m_fDPIScaleX;
+		float m_fDPIScaleY;
+
+		// What direction to place overlapping subtitles. -1 places it above an existing subtitle
+		// while 1 places it below.
+		float m_fSubtitlePlacementDirection;
+
+		float m_fHorizontalMargin;
+		float m_fVerticalMargin;
+
 		// Parsed subtitle info, keyed on subtitle start time.
 		std::unordered_map<REFERENCE_TIME, std::vector<SRTSubtitleEntry>> m_SubtitleMap;
 
 		std::set<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_SubtitleTimeSpans;
 
 		// Valid time spans that encompass the most recently requested playback time
-		std::vector<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_ValidSubtitleTimes;
+		std::list<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_ValidSubtitleTimes;
 
 		// Rendered subtitles
 		struct RenderedSubtitles
 		{
 			SubtitlePicture SubPic;
 			REFERENCE_TIME EndTime;
+			REFERENCE_TIME StartTime;
+
+			bool operator==(const RenderedSubtitles& other)
+			{
+				return SubPic == other.SubPic &&
+					StartTime == other.StartTime &&
+					EndTime == other.EndTime;
+			}
 		};
-		std::unordered_map<REFERENCE_TIME, std::vector<RenderedSubtitles>> m_RenderedSubtitles;
+		std::list<RenderedSubtitles> m_RenderedSubtitles;
 
 	private: // Functions
 
@@ -93,6 +111,17 @@ namespace SubtitleCore
 
 		// Computes timestamps and stores them into rtStart and rtEnd
 		void ComputeTimestamp(const std::wstring& line, REFERENCE_TIME& rtStart, REFERENCE_TIME& rtEnd);
+
+		template<typename T>
+		void ConvertDIPToPixels(float dipX, float dipY, T& outX, T& outY);
+
+		// Renders an SRTSubtitleEntry and generates a SubtitlePicture. Can only be called between
+		// BeginDraw() and EndDraw(). origin will be modified to contain the origin that this 
+		// subtitle drew itself it. Data in each subpic has not been filled out; call
+		// FillSubtitlePictureData once the drawing operations are done to fill out the data.
+		SubtitlePicture RenderSRTSubtitleEntry(SRTSubtitleEntry& entry, D2D_POINT_2F& origin);
+
+		void FillSubtitlePictureData(SubtitlePicture& subpic);
 	};
 };
 

@@ -47,7 +47,7 @@ namespace DXSubFilter
 
 	// Forward declarations
 	class CSubtitleInputPin;
-
+	class SubPicBlender;
 
 
 	class __declspec(uuid("3B6ED1B8-ECF6-422A-8F07-48980E6482CE")) CDXSubFilter : public CTransformFilter
@@ -134,6 +134,9 @@ namespace DXSubFilter
 		// from g_SubtitleCoreConfigData which should have been populated during DLL loading.
 		SubtitleCore::SubtitleCoreConfigurationData m_SubCoreConfigData;
 
+		// Functor that will handle blending subpics to video frame
+		std::shared_ptr<SubPicBlender> m_pSubPicBlender;
+
 	protected: // Functions
 
 		// This is a single massive function that will handle properly blitting video data
@@ -168,6 +171,9 @@ namespace DXSubFilter
 		// subtitle data.
 		bool CheckForEmbeddedSubtitles() const;
 
+		// Assigns the correct subpic blender based on input video type
+		void AssignSubPicBlender();
+
 		// Calculate current playback time relative to playback duration.
 		REFERENCE_TIME CalcCurrentTime() const;
 
@@ -175,8 +181,9 @@ namespace DXSubFilter
 
 		static const int m_iPinCount = 3;
 
-	private: // Functions
+		size_t m_uInputVideoWidth;
+		size_t m_uInputVideoHeight;
 
-		
+	private: // Functions
 	};
 };

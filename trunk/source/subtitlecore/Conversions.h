@@ -7,10 +7,10 @@ namespace SubtitleCoreUtilities
 	inline REFERENCE_TIME ConvertTimeToReferenceTime(size_t hours, size_t minutes, size_t seconds, 
 												size_t milliseconds)
 	{
-		return  (hours * 36000000000) +
-				(minutes * 600000000) + 
-				(seconds * 10000000) + 
-				(milliseconds * 10000);
+		return  (hours * 36000000000i64) +
+				(minutes * 600000000i64) + 
+				(seconds * 10000000i64) + 
+				(milliseconds * 10000i64);
 	}
 
 	inline float ConvertFontPointToDIP(size_t pt)

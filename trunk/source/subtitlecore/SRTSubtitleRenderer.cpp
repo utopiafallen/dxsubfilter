@@ -399,11 +399,13 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 		auto result = m_SubtitleTimeSpans.upper_bound(searchValue);
 
 		// Search backwards to find the first timespan that encompasses current time
+		bool bSpanFound = false;
 		auto start = result;
 		for (;start != m_SubtitleTimeSpans.begin(); --start)
 		{
 			if (start->first <= rtNow && start->second >= rtNow)
 			{
+				bSpanFound = true;
 				break;
 			}
 		}
@@ -412,28 +414,24 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 		if (m_SubtitleTimeSpans.begin()->first <= rtNow &&
 			m_SubtitleTimeSpans.begin()->second >= rtNow)
 		{
+			bSpanFound = true;
 			start = m_SubtitleTimeSpans.begin();
 		}
 
 		// Add list of start times to valid subtitle times
-		for (auto it = start; it != result; ++it)
+		if (bSpanFound)
 		{
-			m_ValidSubtitleTimes.push_back(*it);
+			for (auto it = start; it != result; ++it)
+			{
+				m_ValidSubtitleTimes.insert(*it);
+			}
 		}
 	}
 
 	size_t count = 0;
-	if (m_SubCoreConfig.m_SubtitleBufferSize > 0)
+	for (auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end(); ++it)
 	{
-		// Just check the rendered subtitles
-		//for (auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end()
-	}
-	else
-	{
-		for (auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end(); ++it)
-		{
-			count += m_SubtitleMap[it->first].size();
-		}
+		count += m_SubtitleMap[it->first].size();
 	}
 
 	return count;
@@ -447,16 +445,17 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 	std::vector<std::pair<REFERENCE_TIME, REFERENCE_TIME>> subtitleSpansAlreadyRendered;
 	for (auto renderedIt = m_RenderedSubtitles.begin(); renderedIt != m_RenderedSubtitles.end(); ++renderedIt)
 	{
+		auto renderedSpan = std::make_pair(renderedIt->StartTime, renderedIt->EndTime);
 		if (renderedIt->StartTime <= rtNow && renderedIt->EndTime >= rtNow)
 		{
 			ppOutSubPics[renderedIndex++] = &renderedIt->SubPic;
 
-			auto renderedSpan = std::make_pair(renderedIt->StartTime, renderedIt->EndTime);
 			subtitleSpansAlreadyRendered.push_back(renderedSpan);
-			m_ValidSubtitleTimes.remove(renderedSpan);
+			m_ValidSubtitleTimes.erase(renderedSpan);
 		}
 		else
 		{
+			m_ValidSubtitleTimes.erase(renderedSpan);
 			renderedSubsToRemove.push_back(&(*renderedIt));
 		}
 	}
@@ -470,82 +469,71 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 	// Render unrendered timespans
 	HRESULT hr = S_OK;
 	UNREFERENCED_PARAMETER(hr); // hr is only used for debugging purposes
-
-	size_t newSubIndex = renderedIndex;
-	RenderedSubtitles rsub;
-
-	m_pRT->BeginDraw();
+	if (m_ValidSubtitleTimes.size() > 0)
 	{
-		m_pRT->Clear();
+		size_t newSubIndex = renderedIndex;
+		RenderedSubtitles rsub;
 
-		D2D_POINT_2F origin;
-
-		// Process the first entry first so we can offset the remaining subtitles properly
-		std::vector<SRTSubtitleEntry> subtitleEntries = 
-			m_SubtitleMap[m_ValidSubtitleTimes.begin()->first];
-
-		IDWriteTextLayout* pTextLayout = nullptr;
-
-		hr = m_pDWriteFactory->CreateTextLayout(subtitleEntries.begin()->Text.c_str(), 
-									subtitleEntries.begin()->Text.length(),
-									m_pDWTextFormat,
-									static_cast<float>(m_VideoInfo.Width) - m_fHorizontalMargin,
-									static_cast<float>(m_VideoInfo.Height) - m_fVerticalMargin,
-									&pTextLayout);
-
-		for (auto formatIt = subtitleEntries.begin()->SubTextFormat.begin(); 
-			formatIt != subtitleEntries.begin()->SubTextFormat.end(); 
-			++formatIt)
+		m_pRT->BeginDraw();
 		{
-			pTextLayout->SetFontWeight(formatIt->Weight, formatIt->Range);
-			pTextLayout->SetFontStyle(formatIt->Style, formatIt->Range);
-			pTextLayout->SetUnderline(formatIt->Underline, formatIt->Range);
-			pTextLayout->SetStrikethrough(formatIt->Strikethrough, formatIt->Range);
-		}
+			m_pRT->Clear();
 
-		DWRITE_TEXT_METRICS metrics;
-		pTextLayout->GetMetrics(&metrics);
+			D2D_POINT_2F origin;
 
-		origin.x = static_cast<float>(m_SubCoreConfig.m_LineMarginLeft);
-		origin.y = static_cast<float>(m_SubCoreConfig.m_LineMarginTop);
+			// Process the first entry first so we can offset the remaining subtitles properly
+			std::vector<SRTSubtitleEntry> subtitleEntries = 
+				m_SubtitleMap[m_ValidSubtitleTimes.begin()->first];
 
-		m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
+			IDWriteTextLayout* pTextLayout = nullptr;
 
-		origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection + m_fVerticalMargin;
+			hr = m_pDWriteFactory->CreateTextLayout(subtitleEntries.begin()->Text.c_str(), 
+										subtitleEntries.begin()->Text.length(),
+										m_pDWTextFormat,
+										static_cast<float>(m_VideoInfo.Width) - m_fHorizontalMargin,
+										static_cast<float>(m_VideoInfo.Height) - m_fVerticalMargin,
+										&pTextLayout);
 
-		SafeRelease(&pTextLayout);
+			for (auto formatIt = subtitleEntries.begin()->SubTextFormat.begin(); 
+				formatIt != subtitleEntries.begin()->SubTextFormat.end(); 
+				++formatIt)
+			{
+				pTextLayout->SetFontWeight(formatIt->Weight, formatIt->Range);
+				pTextLayout->SetFontStyle(formatIt->Style, formatIt->Range);
+				pTextLayout->SetUnderline(formatIt->Underline, formatIt->Range);
+				pTextLayout->SetStrikethrough(formatIt->Strikethrough, formatIt->Range);
+			}
 
-		int originX, originY;
-		size_t width, height;
-		originX = static_cast<int>(metrics.left + origin.x);
-		originY = static_cast<int>(metrics.top + origin.y);
-		ConvertDIPToPixels(metrics.width, metrics.height, width, height);
+			DWRITE_TEXT_METRICS metrics;
+			pTextLayout->GetMetrics(&metrics);
 
-		rsub.StartTime = m_ValidSubtitleTimes.begin()->first;
-		rsub.EndTime = m_ValidSubtitleTimes.begin()->second;
-		rsub.SubPic = SubtitlePicture(originX, originY, width, height, width, SBPF_PBGRA32, nullptr);
+			DWRITE_OVERHANG_METRICS overhang;
+			pTextLayout->GetOverhangMetrics(&overhang);
+
+			origin.x = static_cast<float>(m_SubCoreConfig.m_LineMarginLeft);
+			origin.y = static_cast<float>(m_SubCoreConfig.m_LineMarginTop);
+
+			m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
+
+			SafeRelease(&pTextLayout);
+
+			int originX, originY;
+			size_t width, height;
+			originX = static_cast<int>(metrics.left + origin.x);
+			originY = static_cast<int>(metrics.top + origin.y);
+			ConvertDIPToPixels(metrics.width + (overhang.right - overhang.left), 
+				metrics.height, width, height);
+
+			origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection + m_fVerticalMargin;
+
+			rsub.StartTime = m_ValidSubtitleTimes.begin()->first;
+			rsub.EndTime = m_ValidSubtitleTimes.begin()->second;
+			rsub.SubPic = SubtitlePicture(originX, originY, width, height, width, SBPF_PBGRA32, nullptr);
 			
-		m_RenderedSubtitles.push_back(rsub);
-		ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
-
-		// Process remaining SRT entries for the first time span
-		for(auto subIt = subtitleEntries.begin()+1; subIt != subtitleEntries.end(); ++subIt)
-		{
-			rsub.StartTime = subIt->StartTime;
-			rsub.EndTime = subIt->EndTime;
-			rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin);
-
 			m_RenderedSubtitles.push_back(rsub);
 			ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
-		}
 
-		// Process remaining time spans
-		auto it = m_ValidSubtitleTimes.begin();
-		for(++it; it != m_ValidSubtitleTimes.end(); ++it)
-		{
-			subtitleEntries = m_SubtitleMap[it->first];
-
-			for(auto subIt = subtitleEntries.begin(); subIt != subtitleEntries.end(); ++subIt)
+			// Process remaining SRT entries for the first time span
+			for(auto subIt = subtitleEntries.begin()+1; subIt != subtitleEntries.end(); ++subIt)
 			{
 				rsub.StartTime = subIt->StartTime;
 				rsub.EndTime = subIt->EndTime;
@@ -554,23 +542,41 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 				m_RenderedSubtitles.push_back(rsub);
 				ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
 			}
+
+			// Process remaining time spans
+			auto it = m_ValidSubtitleTimes.begin();
+			for(++it; it != m_ValidSubtitleTimes.end(); ++it)
+			{
+				subtitleEntries = m_SubtitleMap[it->first];
+
+				for(auto subIt = subtitleEntries.begin(); subIt != subtitleEntries.end(); ++subIt)
+				{
+					rsub.StartTime = subIt->StartTime;
+					rsub.EndTime = subIt->EndTime;
+					rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin);
+
+					m_RenderedSubtitles.push_back(rsub);
+					ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
+				}
+			}
+		}
+		hr = m_pRT->EndDraw();
+
+		// Fill out the data for newly rendered subtitle pictures
+		for (size_t i = renderedIndex; i < newSubIndex; i++)
+		{
+			FillSubtitlePictureData(*ppOutSubPics[i]);
 		}
 	}
-	hr = m_pRT->EndDraw();
 
 	// Put back rendered timespans into valid timespans
 	for (auto rspan = subtitleSpansAlreadyRendered.begin(); rspan != subtitleSpansAlreadyRendered.end(); ++rspan)
 	{
-		m_ValidSubtitleTimes.push_back(*rspan);
+		m_ValidSubtitleTimes.insert(*rspan);
 	}
 
-	// Fill out the data for newly rendered subtitle pictures
-	for (size_t i = renderedIndex; i < newSubIndex; i++)
-	{
-		FillSubtitlePictureData(*ppOutSubPics[i]);
-	}
 
-	IWICBitmapEncoder *pEncoder = NULL;
+	/*IWICBitmapEncoder *pEncoder = NULL;
 	IWICBitmapFrameEncode *pFrameEncode = NULL;
 	IWICStream *pStream = NULL;
 	if (SUCCEEDED(hr))
@@ -621,7 +627,7 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 	}
 	SafeRelease(&pStream);
 	SafeRelease(&pEncoder);
-	SafeRelease(&pFrameEncode);
+	SafeRelease(&pFrameEncode);*/
 }
 
 bool SRTSubtitleRenderer::CheckLineIsTimestamp(const std::wstring& line)
@@ -688,16 +694,16 @@ template<typename T>
 void SRTSubtitleRenderer::ConvertDIPToPixels(float dipX, float dipY, T& outX, T& outY)
 {
 	// Round up
-	outX = static_cast<T>(dipX * m_fDPIScaleX + 0.5f);
-	outY = static_cast<T>(dipY * m_fDPIScaleY + 0.5f);
+	outX = static_cast<T>(dipX * m_fDPIScaleX + 0.5f) + 4;
+	outY = static_cast<T>(dipY * m_fDPIScaleY + 0.5f) + 4;
 }
 
 SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& entry, D2D_POINT_2F& origin)
 {
-	IDWriteTextLayout* pTextLayout = nullptr;
-	DWRITE_TEXT_METRICS metrics;
 	HRESULT hr;
 	UNREFERENCED_PARAMETER(hr); // hr is only used for debugging purposes
+
+	IDWriteTextLayout* pTextLayout = nullptr;
 
 	hr = m_pDWriteFactory->CreateTextLayout(entry.Text.c_str(), 
 									entry.Text.length(),
@@ -714,12 +720,13 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 		pTextLayout->SetStrikethrough(formatIt->Strikethrough, formatIt->Range);
 	}
 
+	DWRITE_TEXT_METRICS metrics;
 	pTextLayout->GetMetrics(&metrics);
 
-	m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
+	DWRITE_OVERHANG_METRICS overhang;
+	pTextLayout->GetOverhangMetrics(&overhang);
 
-	// Offset for the next subtitle to be draw after us
-	origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection + m_fVerticalMargin;
+	m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
 
 	SafeRelease(&pTextLayout);
 
@@ -727,7 +734,11 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 	size_t width, height;
 	originX = static_cast<int>(metrics.left + origin.x);
 	originY = static_cast<int>(metrics.top + origin.y);
-	ConvertDIPToPixels(metrics.width, metrics.height, width, height);
+	ConvertDIPToPixels(metrics.width + (overhang.right - overhang.left), 
+				metrics.height, width, height);
+
+	// Offset for the next subtitle to be draw after us
+	origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection + m_fVerticalMargin;
 
 	return SubtitlePicture(originX, originY, width, height, width, SBPF_PBGRA32, nullptr);
 }
@@ -759,4 +770,6 @@ void SRTSubtitleRenderer::FillSubtitlePictureData(SubtitlePicture& subpic)
 
 	subpic.m_uStride = pcbStride;
 	subpic.m_Data = std::shared_ptr<unsigned char>(data, SubtitlePicture::Deleter<unsigned char>());
+
+	pBitmapLock->Release();
 }

@@ -86,7 +86,7 @@ namespace SubtitleCore
 		std::set<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_SubtitleTimeSpans;
 
 		// Valid time spans that encompass the most recently requested playback time
-		std::list<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_ValidSubtitleTimes;
+		std::set<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_ValidSubtitleTimes;
 
 		// Rendered subtitles
 		struct RenderedSubtitles

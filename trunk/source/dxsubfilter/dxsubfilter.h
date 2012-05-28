@@ -175,7 +175,7 @@ namespace DXSubFilter
 		void AssignSubPicBlender();
 
 		// Calculate current playback time relative to playback duration.
-		REFERENCE_TIME CalcCurrentTime() const;
+		REFERENCE_TIME CalcCurrentTime(REFERENCE_TIME rtOffset) const;
 
 	private: // Data
 

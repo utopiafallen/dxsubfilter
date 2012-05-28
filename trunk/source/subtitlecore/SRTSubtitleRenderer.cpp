@@ -398,14 +398,16 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 		// Find first time span greater than current time
 		auto result = m_SubtitleTimeSpans.upper_bound(searchValue);
 
-		// Search backwards to find the first timespan that encompasses current time
-		bool bSpanFound = false;
-		auto start = result;
+		// Search backwards to find the timespans that encompasses current time
+		auto start = --result;
 		for (;start != m_SubtitleTimeSpans.begin(); --start)
 		{
 			if (start->first <= rtNow && start->second >= rtNow)
 			{
-				bSpanFound = true;
+				m_ValidSubtitleTimes.insert(*start);
+			}
+			else
+			{
 				break;
 			}
 		}
@@ -414,17 +416,7 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 		if (m_SubtitleTimeSpans.begin()->first <= rtNow &&
 			m_SubtitleTimeSpans.begin()->second >= rtNow)
 		{
-			bSpanFound = true;
-			start = m_SubtitleTimeSpans.begin();
-		}
-
-		// Add list of start times to valid subtitle times
-		if (bSpanFound)
-		{
-			for (auto it = start; it != result; ++it)
-			{
-				m_ValidSubtitleTimes.insert(*it);
-			}
+			m_ValidSubtitleTimes.insert(*m_SubtitleTimeSpans.begin());
 		}
 	}
 
@@ -523,7 +515,7 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 			ConvertDIPToPixels(metrics.width + (overhang.right - overhang.left), 
 				metrics.height, width, height);
 
-			origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection + m_fVerticalMargin;
+			origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection;
 
 			rsub.StartTime = m_ValidSubtitleTimes.begin()->first;
 			rsub.EndTime = m_ValidSubtitleTimes.begin()->second;
@@ -738,7 +730,7 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 				metrics.height, width, height);
 
 	// Offset for the next subtitle to be draw after us
-	origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection + m_fVerticalMargin;
+	origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection;
 
 	return SubtitlePicture(originX, originY, width, height, width, SBPF_PBGRA32, nullptr);
 }

@@ -90,7 +90,7 @@ namespace DXSubFilter
 			short G = (BGRA & 0x0000FF00) >> 8;
 			short B = (BGRA & 0x000000FF);
 
-			return ((-37 * R + -74 * G + 111 * B + 128) >> 8) + 128;
+			return ((-37 * R + -74 * G + 111 * B + 128) >> 8);
 		}
 
 		__forceinline static short ConvertBGRAToVBT601(unsigned int BGRA)
@@ -99,7 +99,7 @@ namespace DXSubFilter
 			short G = (BGRA & 0x0000FF00) >> 8;
 			short B = (BGRA & 0x000000FF);
 
-			return (( 112 * R -  94 * G -  18 * B + 128) >> 8) + 128;
+			return (( 112 * R -  94 * G -  18 * B + 128) >> 8);
 		}
 	};
 
@@ -123,6 +123,7 @@ namespace DXSubFilter
 			size_t uUVPlaneHeight = (uSubPicHeight-1) / 2;
 			size_t uUVPlaneWidth = (uSubPicWidth-1) / 2;
 
+			int iDstOffsetXUV = iDstOffsetX / 2;
 			int iDstOffsetYUV = iDstOffsetY / 2;
 
 			// In case dimensions are not divisible by our unrolled processing size
@@ -227,7 +228,7 @@ namespace DXSubFilter
 				for (size_t x = 0; x < uUVPlaneWidth; x++)
 				{
 					BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y * 2 + x * 8; // 2 pixels @ 4 bytes per pixel 
-					BYTE* __restrict pDst = pUVPlane + dstWidth * (iDstOffsetYUV + y) + (x*2) + iDstOffsetX ;
+					BYTE* __restrict pDst = pUVPlane + dstWidth * (iDstOffsetYUV + y) + (x+iDstOffsetXUV) *2 ;
 
 					unsigned int* pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
 
@@ -261,9 +262,12 @@ namespace DXSubFilter
 					UNREFERENCED_PARAMETER(finalU);
 					UNREFERENCED_PARAMETER(finalV);
 					UNREFERENCED_PARAMETER(pDst);
+
+					short dstU = (finalU + (((pDst[0]-128) * (255 - finalA)) >> 8)) + 128;
+					short dstV = (finalV + (((pDst[1]-128) * (255 - finalA)) >> 8)) + 128;
 					// Blend results
-					//pDst[0] = static_cast<BYTE>((finalU * finalA + pDst[0] * (255 - finalA)) >> 8);
-					//pDst[1] = static_cast<BYTE>((finalV * finalA + pDst[1] * (255 - finalA)) >> 8);
+					pDst[0] = static_cast<BYTE>(min_nb<short>(dstU, 255));
+					pDst[1] = static_cast<BYTE>(min_nb<short>(dstV, 255));
 				}
 			}
 		}

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "SubtitleRendererFactory.h"
 #include "SRTSubtitleRenderer.h"
+#include "NoSubtitleRenderer.h"
 
 using namespace SubtitleCore;
 
@@ -78,6 +79,10 @@ std::shared_ptr<ISubtitleRenderer> SubtitleRendererFactory::CreateSubtitleRender
 					}
 					return m_SubtitleRendererCache[index][0];
 				}
+			}
+		case SBT_NONE:
+			{
+				return std::make_shared<NoSubtitleRenderer>();
 			}
 		default:
 			{

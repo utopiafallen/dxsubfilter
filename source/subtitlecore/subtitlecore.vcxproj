@@ -105,6 +105,7 @@
   <ItemGroup>
     <ClInclude Include="DirectXHelpers.h" />
     <ClInclude Include="ISubtitleRenderer.h" />
+    <ClInclude Include="NoSubtitleRenderer.h" />
     <ClInclude Include="SRTSubtitleEntry.h" />
     <ClInclude Include="SRTSubtitleRenderer.h" />
     <ClInclude Include="stdafx.h" />
@@ -114,6 +115,7 @@
     <ClInclude Include="Conversions.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="NoSubtitleRenderer.cpp" />
     <ClCompile Include="SRTSubtitleRenderer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

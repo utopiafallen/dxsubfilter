@@ -26,6 +26,9 @@
     <Filter Include="Source Files\Utilities">
       <UniqueIdentifier>{357f2918-fd9f-4ebd-9674-eb8ccbfe9085}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\NoSubtitles">
+      <UniqueIdentifier>{b9a0657b-cf5f-4614-adc6-a72a5b428ab6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -55,6 +58,9 @@
     <ClInclude Include="DirectXHelpers.h">
       <Filter>Source Files\Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="NoSubtitleRenderer.h">
+      <Filter>Source Files\NoSubtitles</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -65,6 +71,9 @@
     </ClCompile>
     <ClCompile Include="SRTSubtitleRenderer.cpp">
       <Filter>Source Files\SRT</Filter>
+    </ClCompile>
+    <ClCompile Include="NoSubtitleRenderer.cpp">
+      <Filter>Source Files\NoSubtitles</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

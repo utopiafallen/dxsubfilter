@@ -15,7 +15,8 @@ inline void SafeRelease(Interface** pInterfaceToRelease)
 	}
 }
 
-// Note that the color is expected to be in ABGR with R in the LSB.
+// Note that the color is expected to be in ABGR with R in the LSB based on the assumption that
+// color is given in hexadecimal.
 inline D2D_COLOR_F ConvertABGRToD2DCOLORF(unsigned int ABGR)
 {
 	static const float normalize = 1.0f/255.0f;

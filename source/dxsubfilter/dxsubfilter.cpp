@@ -5,6 +5,7 @@
 #include "dxsubfilter.h"
 #include "SubtitleInputPin.h"
 #include "SubtitleRendererFactory.h"
+#include "SubPicBlender.h"
 
 using namespace DXSubFilter;
 
@@ -13,6 +14,7 @@ CDXSubFilter::CDXSubFilter(LPUNKNOWN pUnk)
 	, m_SubCoreConfigData(g_SubtitleCoreConfigData)
 	, m_pInputSubtitlePin(nullptr)
 	, m_pAlignedBuffer(nullptr)
+	, m_pSubPicBlender(nullptr)
 	, m_uAlignedBufferLength(0)
 	, m_InputStrideY(0)
 	, m_InputStrideUV(0)
@@ -182,6 +184,8 @@ HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin
 					m_pAlignedBuffer = static_cast<BYTE*>(_aligned_malloc(m_InputVideoType.lSampleSize, 16));
 					m_uAlignedBufferLength = m_InputVideoType.lSampleSize;
 
+					AssignSubPicBlender();
+
 					return S_OK;
 				}
 				else
@@ -203,6 +207,8 @@ HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin
 			// Video sample size shouldn't ever change
 			m_pAlignedBuffer = static_cast<BYTE*>(_aligned_malloc(m_InputVideoType.lSampleSize, 16));
 			m_uAlignedBufferLength = m_InputVideoType.lSampleSize;
+
+			AssignSubPicBlender();
 
 			return S_OK;
 		}
@@ -453,6 +459,11 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	{
 		std::vector<SubtitleCore::SubtitlePicture*> subpics(subpicCount, nullptr);
 		m_pInputSubtitlePin->m_SubtitleRenderer->GetSubtitlePicture(rtNow, &subpics[0]);
+
+		for (auto it = subpics.begin(); it != subpics.end(); ++it)
+		{
+			(*m_pSubPicBlender)(*it, m_pAlignedBuffer, m_uInputVideoWidth, m_uInputVideoHeight);
+		}
 	}
 
 	// Copy buffer to output
@@ -684,6 +695,9 @@ void CDXSubFilter::ComputeStrides()
 
 	BITMAPINFOHEADER& bmiIn = reinterpret_cast<VIDEOINFOHEADER2*>(m_InputVideoType.pbFormat)->bmiHeader;
 
+	m_uInputVideoWidth = bmiIn.biWidth;
+	m_uInputVideoHeight = bmiIn.biHeight;
+
 	// Compute input and output strides
 	bool b16BitVideo = CheckVideoSubtypeIs16Bit(&m_InputVideoType);
 	if (b16BitVideo)
@@ -810,5 +824,17 @@ void CDXSubFilter::CorrectVideoMediaType(CMediaType* pMediaType) const
 	}
 
 	pMediaType->lSampleSize = bmiIn.biSizeImage;
+}
+
+void CDXSubFilter::AssignSubPicBlender()
+{
+	if (m_InputVideoType.subtype == MEDIASUBTYPE_NV12)
+	{
+		m_pSubPicBlender = std::make_shared<BlendBGRAWithNV12BT601>();
+	}
+	else
+	{
+		m_pSubPicBlender = nullptr;
+	}
 }
 //------------------------------------------------------------------------------

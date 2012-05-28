@@ -19,7 +19,6 @@ CSubtitleInputPin::CSubtitleInputPin(LPCWSTR pObjectName, CDXSubFilter *pTransfo
 
 CSubtitleInputPin::~CSubtitleInputPin()
 {
-
 }
 
 //------------------------------------------------------------------------------
@@ -49,6 +48,7 @@ HRESULT CSubtitleInputPin::CheckMediaType(const CMediaType* mtIn)
 		if (!m_SubtitleRenderer)
 		{
 			m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::GetSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
+			m_SubtitleRenderer->Invalidate();
 			m_SubtitleRenderer->ParseScript(m_ExternalSubtitleScript);
 		}
 	}
@@ -102,6 +102,7 @@ STDMETHODIMP CSubtitleInputPin::EndOfStream()
 
 STDMETHODIMP CSubtitleInputPin::NewSegment(REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate)
 {
+	m_SubtitleRenderer->Invalidate();
 	return CBasePin::NewSegment(tStart, tStop, dRate);
 }
 
@@ -160,7 +161,14 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 		wchData[numWChars-1] = L'\0';
 
 		// The sample should just be a single line of subtitle data
-		std::wstring s(&wchData[0]);
+		std::wstring line(&wchData[0]);
+
+		REFERENCE_TIME rtStart, rtEnd;
+		hr = pSample->GetTime(&rtStart, &rtEnd);
+
+		rtStart += m_tStart;
+		rtEnd += m_tStart;
+		m_SubtitleRenderer->ParseLine(line, rtStart, rtEnd);
 	}
 
 	return S_OK;

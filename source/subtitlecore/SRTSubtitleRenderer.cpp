@@ -377,46 +377,49 @@ void SRTSubtitleRenderer::Invalidate()
 
 size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 {
-	// Check to see if rtNow falls within previously created list of valid time spans
-	bool bStillWithinSpans = false;
-	for (auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end(); ++it)
+	if (m_SubtitleTimeSpans.size() > 0)
 	{
-		if (it->first <= rtNow && it->second >= rtNow)
+		// Check to see if rtNow falls within previously created list of valid time spans
+		bool bStillWithinSpans = false;
+		for (auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end(); ++it)
 		{
-			bStillWithinSpans = true;
-			break;
-		}
-	}
-
-	if (!bStillWithinSpans)
-	{
-		m_ValidSubtitleTimes.clear();
-
-		// Get closest subtitle time spans
-		auto searchValue = std::make_pair(rtNow - 100, rtNow + 100);
-
-		// Find first time span greater than current time
-		auto result = m_SubtitleTimeSpans.upper_bound(searchValue);
-
-		// Search backwards to find the timespans that encompasses current time
-		auto start = --result;
-		for (;start != m_SubtitleTimeSpans.begin(); --start)
-		{
-			if (start->first <= rtNow && start->second >= rtNow)
+			if (it->first <= rtNow && it->second >= rtNow)
 			{
-				m_ValidSubtitleTimes.insert(*start);
-			}
-			else
-			{
+				bStillWithinSpans = true;
 				break;
 			}
 		}
-	
-		// Need to specifically check begin since we skip it
-		if (m_SubtitleTimeSpans.begin()->first <= rtNow &&
-			m_SubtitleTimeSpans.begin()->second >= rtNow)
+
+		if (!bStillWithinSpans)
 		{
-			m_ValidSubtitleTimes.insert(*m_SubtitleTimeSpans.begin());
+			m_ValidSubtitleTimes.clear();
+
+			// Get closest subtitle time spans
+			auto searchValue = std::make_pair(rtNow - 100, rtNow + 100);
+
+			// Find first time span greater than current time
+			auto result = m_SubtitleTimeSpans.upper_bound(searchValue);
+
+			// Search backwards to find the timespans that encompasses current time
+			auto start = --result;
+			for (;start != m_SubtitleTimeSpans.begin(); --start)
+			{
+				if (start->first <= rtNow && start->second >= rtNow)
+				{
+					m_ValidSubtitleTimes.insert(*start);
+				}
+				else
+				{
+					break;
+				}
+			}
+	
+			// Need to specifically check begin since we skip it
+			if (m_SubtitleTimeSpans.begin()->first <= rtNow &&
+				m_SubtitleTimeSpans.begin()->second >= rtNow)
+			{
+				m_ValidSubtitleTimes.insert(*m_SubtitleTimeSpans.begin());
+			}
 		}
 	}
 

@@ -180,6 +180,12 @@ HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin
 
 					ComputeStrides();
 
+					if (m_pAlignedBuffer)
+					{
+						_aligned_free(m_pAlignedBuffer);
+						m_pAlignedBuffer = nullptr;
+					}
+
 					// Video sample size shouldn't ever change
 					m_pAlignedBuffer = static_cast<BYTE*>(_aligned_malloc(m_InputVideoType.lSampleSize, 16));
 					m_uAlignedBufferLength = m_InputVideoType.lSampleSize;
@@ -203,6 +209,12 @@ HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin
 		{
 			// Input matches output so we're good to go
 			ComputeStrides();
+
+			if (m_pAlignedBuffer)
+			{
+				_aligned_free(m_pAlignedBuffer);
+				m_pAlignedBuffer = nullptr;
+			}
 
 			// Video sample size shouldn't ever change
 			m_pAlignedBuffer = static_cast<BYTE*>(_aligned_malloc(m_InputVideoType.lSampleSize, 16));

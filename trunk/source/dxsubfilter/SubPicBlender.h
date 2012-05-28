@@ -115,6 +115,7 @@ namespace DXSubFilter
 			size_t uSubPicStride = subpic->m_uStride;
 			size_t uSubPicWidth = subpic->m_uWidth;
 			size_t uSubPicHeight = subpic->m_uHeight;
+			size_t uSubPicBGRAStride = uSubPicStride / 4;
 
 			int iDstOffsetX = subpic->m_iOriginX;
 			int iDstOffsetY = subpic->m_iOriginY;
@@ -235,8 +236,8 @@ namespace DXSubFilter
 					// Get 2x2 pixel block
 					unsigned int BGRA1 = pBGRAData[0];
 					unsigned int BGRA2 = pBGRAData[1];
-					unsigned int BGRA3 = pBGRAData[uSubPicWidth];
-					unsigned int BGRA4 = pBGRAData[uSubPicWidth + 1];
+					unsigned int BGRA3 = pBGRAData[uSubPicBGRAStride];
+					unsigned int BGRA4 = pBGRAData[uSubPicBGRAStride + 1];
 
 					short A1 = (BGRA1 & 0xFF000000) >> 24;
 					short A2 = (BGRA2 & 0xFF000000) >> 24;
@@ -254,6 +255,7 @@ namespace DXSubFilter
 					short V4 = ConvertBGRAToVBT601(BGRA4);
 
 					// Average results
+					//short finalA = (A1 + A2 + A3 + A4) / 4;
 					short finalA = max_nb(A1, max_nb(A2, max_nb(A3,A4)));
 					short finalU = (U1 + U2 + U3 + U4) / 4;
 					short finalV = (V1 + V2 + V3 + V4) / 4;

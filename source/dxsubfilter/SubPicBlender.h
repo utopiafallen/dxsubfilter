@@ -29,6 +29,19 @@ namespace DXSubFilter
 	// [U]	=	[-25	-86	   111] [G]
 	// [V]		[157	-142   -14]	[B]
 
+	// Use look up tables rather than perform actual multiplication
+	_MM_ALIGN16 extern short YRConvTableBT601[];
+	_MM_ALIGN16 extern short YGConvTableBT601[];
+	_MM_ALIGN16 extern short YBConvTableBT601[];
+
+	_MM_ALIGN16 extern short URConvTableBT601[];
+	_MM_ALIGN16 extern short UGConvTableBT601[];
+	_MM_ALIGN16 extern short UBConvTableBT601[];
+
+	_MM_ALIGN16 extern short VRConvTableBT601[];
+	_MM_ALIGN16 extern short VGConvTableBT601[];
+	_MM_ALIGN16 extern short VBConvTableBT601[];
+
 	class __declspec(novtable) SubPicBlender
 	{
 	public:
@@ -36,6 +49,8 @@ namespace DXSubFilter
 		inline virtual void operator()(SubtitleCore::SubtitlePicture* subpic, BYTE* pData,
 			size_t dstWidth, size_t dstHeight) = 0;
 	protected:
+		SubPicBlender();
+
 		// Stored assuming BGR order
 		static __m128i YCoeffBT601;
 		static __m128i UCoeffBT601;
@@ -56,6 +71,8 @@ namespace DXSubFilter
 		static __m128i VCoeff16BT709;
 
 		static __m128i zero;
+
+		static bool m_bBT601ConvTablesInitialized;
 
 		__forceinline static __m128i _mm_dot_epi16(__m128i a, __m128i b)
 		{
@@ -81,7 +98,7 @@ namespace DXSubFilter
 			short G = (BGRA & 0x0000FF00) >> 8;
 			short B = (BGRA & 0x000000FF);
 
-			return ((77 * R + 150 * G + 29 * B + 128) >> 8);
+			return (YRConvTableBT601[R] + YGConvTableBT601[G] + YBConvTableBT601[B] + 128) >> 8;
 		}
 
 		__forceinline static short ConvertBGRAToUBT601(unsigned int BGRA)
@@ -90,7 +107,7 @@ namespace DXSubFilter
 			short G = (BGRA & 0x0000FF00) >> 8;
 			short B = (BGRA & 0x000000FF);
 
-			return ((-37 * R + -74 * G + 111 * B + 128) >> 8);
+			return (URConvTableBT601[R] + UGConvTableBT601[G] + UBConvTableBT601[B] + 128) >> 8;
 		}
 
 		__forceinline static short ConvertBGRAToVBT601(unsigned int BGRA)
@@ -99,7 +116,7 @@ namespace DXSubFilter
 			short G = (BGRA & 0x0000FF00) >> 8;
 			short B = (BGRA & 0x000000FF);
 
-			return (( 112 * R -  94 * G -  18 * B + 128) >> 8);
+			return (VRConvTableBT601[R] + VGConvTableBT601[G] + VBConvTableBT601[B] + 128) >> 8;
 		}
 	};
 
@@ -223,8 +240,8 @@ namespace DXSubFilter
 			});
 
 			// Blend UV plane
-			//Concurrency::parallel_for(0U, uUVPlaneHeight, [&](size_t y)
-			for (size_t y = 0; y < uUVPlaneHeight; y++)
+			Concurrency::parallel_for(0U, uUVPlaneHeight, [&](size_t y)
+			//for (size_t y = 0; y < uUVPlaneHeight; y++)
 			{
 				for (size_t x = 0; x < uUVPlaneWidth; x++)
 				{
@@ -271,7 +288,7 @@ namespace DXSubFilter
 					pDst[0] = static_cast<BYTE>(min_nb<short>(dstU, 255));
 					pDst[1] = static_cast<BYTE>(min_nb<short>(dstV, 255));
 				}
-			}
+			});
 		}
 	};
 

@@ -30,17 +30,20 @@ namespace DXSubFilter
 	// [V]		[157	-142   -14]	[B]
 
 	// Use look up tables rather than perform actual multiplication
-	_MM_ALIGN16 extern short YRConvTableBT601[];
-	_MM_ALIGN16 extern short YGConvTableBT601[];
-	_MM_ALIGN16 extern short YBConvTableBT601[];
+	_MM_ALIGN16 extern short YRConvTableBT601[256];
+	_MM_ALIGN16 extern short YGConvTableBT601[256];
+	_MM_ALIGN16 extern short YBConvTableBT601[256];
 
-	_MM_ALIGN16 extern short URConvTableBT601[];
-	_MM_ALIGN16 extern short UGConvTableBT601[];
-	_MM_ALIGN16 extern short UBConvTableBT601[];
+	_MM_ALIGN16 extern short URConvTableBT601[256];
+	_MM_ALIGN16 extern short UGConvTableBT601[256];
+	_MM_ALIGN16 extern short UBConvTableBT601[256];
 
-	_MM_ALIGN16 extern short VRConvTableBT601[];
-	_MM_ALIGN16 extern short VGConvTableBT601[];
-	_MM_ALIGN16 extern short VBConvTableBT601[];
+	_MM_ALIGN16 extern short VRConvTableBT601[256];
+	_MM_ALIGN16 extern short VGConvTableBT601[256];
+	_MM_ALIGN16 extern short VBConvTableBT601[256];
+
+	// [SrcValue][AlphaValue]
+	_MM_ALIGN16 extern short AlphaBlendTable[256][256];
 
 	class __declspec(novtable) SubPicBlender
 	{
@@ -72,7 +75,7 @@ namespace DXSubFilter
 
 		static __m128i zero;
 
-		static bool m_bBT601ConvTablesInitialized;
+		static bool m_bConvTablesInitialized;
 
 		__forceinline static __m128i _mm_dot_epi16(__m128i a, __m128i b)
 		{
@@ -164,7 +167,7 @@ namespace DXSubFilter
 					short A = (BGRA & 0xFF000000) >> 24;
 
 					pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																((pDst[0] * (255-A)) >> 8));
+																AlphaBlendTable[pDst[0]][(255-A)]);
 
 					// Pixel 2
 					BGRA = pBGRAData[1];
@@ -172,7 +175,7 @@ namespace DXSubFilter
 					A = (BGRA & 0xFF000000) >> 24;
 
 					pDst[1] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																((pDst[1] * (255-A)) >> 8));
+																AlphaBlendTable[pDst[1]][(255-A)]);
 
 					// Pixel 3
 					BGRA = pBGRAData[2];
@@ -180,7 +183,7 @@ namespace DXSubFilter
 					A = (BGRA & 0xFF000000) >> 24;
 
 					pDst[2] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																((pDst[2] * (255-A)) >> 8));
+																AlphaBlendTable[pDst[2]][(255-A)]);
 
 					// Pixel 4
 					BGRA = pBGRAData[3];
@@ -188,7 +191,7 @@ namespace DXSubFilter
 					A = (BGRA & 0xFF000000) >> 24;
 
 					pDst[3] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																((pDst[3] * (255-A)) >> 8));
+																AlphaBlendTable[pDst[3]][(255-A)]);
 
 					// Pixel 5
 					BGRA = pBGRAData[4];
@@ -196,7 +199,7 @@ namespace DXSubFilter
 					A = (BGRA & 0xFF000000) >> 24;
 
 					pDst[4] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																((pDst[4] * (255-A)) >> 8));
+																AlphaBlendTable[pDst[4]][(255-A)]);
 
 					// Pixel 6
 					BGRA = pBGRAData[5];
@@ -204,7 +207,7 @@ namespace DXSubFilter
 					A = (BGRA & 0xFF000000) >> 24;
 
 					pDst[5] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																((pDst[5] * (255-A)) >> 8));
+																AlphaBlendTable[pDst[5]][(255-A)]);
 
 					// Pixel 7
 					BGRA = pBGRAData[6];
@@ -212,7 +215,7 @@ namespace DXSubFilter
 					A = (BGRA & 0xFF000000) >> 24;
 
 					pDst[6] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																((pDst[6] * (255-A)) >> 8));
+																AlphaBlendTable[pDst[6]][(255-A)]);
 
 					// Pixel 8
 					BGRA = pBGRAData[7];
@@ -220,7 +223,7 @@ namespace DXSubFilter
 					A = (BGRA & 0xFF000000) >> 24;
 
 					pDst[7] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																((pDst[7] * (255-A)) >> 8));
+																AlphaBlendTable[pDst[7]][(255-A)]);
 				}
 
 				for (size_t x = uSubPicUnrolledWidth; x < uSubPicWidth; x++)
@@ -235,7 +238,7 @@ namespace DXSubFilter
 					short A = (BGRA & 0xFF000000) >> 24;
 
 					pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																((pDst[0] * (255-A)) >> 8));
+																AlphaBlendTable[pDst[0]][(255-A)]);
 				}
 			});
 
@@ -271,20 +274,16 @@ namespace DXSubFilter
 					short V3 = ConvertBGRAToVBT601(BGRA3);
 					short V4 = ConvertBGRAToVBT601(BGRA4);
 
-					// Average results
-					//short finalA = (A1 + A2 + A3 + A4) / 4;
+					// Average results. We bias alpha to the greatest value so we don't lose
+					// opacity due to averaging.
 					short finalA = max_nb(A1, max_nb(A2, max_nb(A3,A4)));
-					short finalU = (U1 + U2 + U3 + U4) / 4;
-					short finalV = (V1 + V2 + V3 + V4) / 4;
+					short finalU = (U1 + U2 + U3 + U4) >> 2;
+					short finalV = (V1 + V2 + V3 + V4) >> 2;
 
-					UNREFERENCED_PARAMETER(finalA);
-					UNREFERENCED_PARAMETER(finalU);
-					UNREFERENCED_PARAMETER(finalV);
-					UNREFERENCED_PARAMETER(pDst);
-
+					// Blend results
 					short dstU = (finalU + (((pDst[0]-128) * (255 - finalA)) >> 8)) + 128;
 					short dstV = (finalV + (((pDst[1]-128) * (255 - finalA)) >> 8)) + 128;
-					// Blend results
+					
 					pDst[0] = static_cast<BYTE>(min_nb<short>(dstU, 255));
 					pDst[1] = static_cast<BYTE>(min_nb<short>(dstV, 255));
 				}

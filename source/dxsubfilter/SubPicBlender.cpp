@@ -16,6 +16,9 @@ namespace DXSubFilter
 	_MM_ALIGN16 short VRConvTableBT601[256];
 	_MM_ALIGN16 short VGConvTableBT601[256];
 	_MM_ALIGN16 short VBConvTableBT601[256];
+
+	// [AlphaValue][SrcValue]
+	_MM_ALIGN16 short AlphaBlendTable[256][256];
 }
 
 __m128i SubPicBlender::YCoeffBT601 = _mm_set_epi16(0, 77, 150, 29, 0, 77, 150, 29);
@@ -36,13 +39,13 @@ __m128i SubPicBlender::VCoeff16BT709 = _mm_set_epi32(0, 157, -142, -14);
 
 __m128i SubPicBlender::zero = _mm_setzero_si128();
 
-bool SubPicBlender::m_bBT601ConvTablesInitialized = false;
+bool SubPicBlender::m_bConvTablesInitialized = false;
 
 SubPicBlender::SubPicBlender()
 {
-	if (m_bBT601ConvTablesInitialized == false)
+	if (m_bConvTablesInitialized == false)
 	{
-		m_bBT601ConvTablesInitialized = true;
+		m_bConvTablesInitialized = true;
 
 		for (short i = 0; i < 256; i++)
 		{
@@ -57,6 +60,11 @@ SubPicBlender::SubPicBlender()
 			VRConvTableBT601[i] = 112 * i;
 			VGConvTableBT601[i] = -94 * i;
 			VBConvTableBT601[i] = -18 * i;
+
+			for (short j = 0; j < 256; j++)
+			{
+				AlphaBlendTable[i][j] = (i * j) >> 8;
+			}
 		}
 	}
 }

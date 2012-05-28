@@ -440,8 +440,12 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 		return hr;
 	}
 
+	REFERENCE_TIME rtStart, rtEnd;
+	hr = pIn->GetTime(&rtStart, &rtEnd);
+	UNREFERENCED_PARAMETER(rtStart);
+	UNREFERENCED_PARAMETER(rtEnd);
 	// Get current playback time
-	rtNow = CalcCurrentTime();
+	rtNow = CalcCurrentTime(rtStart);
 
 	// Check that input sample size is the same as when we first connected. This shouldn't have
 	// changed.
@@ -480,16 +484,9 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 //------------------------------------------------------------------------------
 // These are all the non-DirectShow related functions
 
-REFERENCE_TIME CDXSubFilter::CalcCurrentTime() const
+REFERENCE_TIME CDXSubFilter::CalcCurrentTime(REFERENCE_TIME rtOffset) const
 {
-	// Find elapsed delta time. m_tStart is the reference clock time at which 
-	// IMediaFilter::Run was called.
-	REFERENCE_TIME rtCurrentRefTime;
-	m_pClock->GetTime(&rtCurrentRefTime);
-
-	REFERENCE_TIME rtDelta = rtCurrentRefTime - m_tStart.m_time;
-
-	return m_rtStart + static_cast<REFERENCE_TIME>(rtDelta * m_dPlaybackRate);
+	return m_rtStart + rtOffset;
 }
 
 bool CDXSubFilter::CheckVideoSubtypeIs8Bit(const CMediaType* pMediaType) const

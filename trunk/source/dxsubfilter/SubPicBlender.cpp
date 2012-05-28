@@ -3,6 +3,21 @@
 
 using namespace DXSubFilter;
 
+namespace DXSubFilter
+{
+	_MM_ALIGN16 short YRConvTableBT601[256];
+	_MM_ALIGN16 short YGConvTableBT601[256];
+	_MM_ALIGN16 short YBConvTableBT601[256];
+
+	_MM_ALIGN16 short URConvTableBT601[256];
+	_MM_ALIGN16 short UGConvTableBT601[256];
+	_MM_ALIGN16 short UBConvTableBT601[256];
+
+	_MM_ALIGN16 short VRConvTableBT601[256];
+	_MM_ALIGN16 short VGConvTableBT601[256];
+	_MM_ALIGN16 short VBConvTableBT601[256];
+}
+
 __m128i SubPicBlender::YCoeffBT601 = _mm_set_epi16(0, 77, 150, 29, 0, 77, 150, 29);
 __m128i SubPicBlender::UCoeffBT601 = _mm_set_epi16(0, -37, -74, 111, 0, -37, -74, 111);
 __m128i SubPicBlender::VCoeffBT601 = _mm_set_epi16(0, 112, -94, -18, 0, 112, -94, -18);
@@ -20,3 +35,28 @@ __m128i SubPicBlender::UCoeff16BT709 = _mm_set_epi32(0, -25, -86, 111);
 __m128i SubPicBlender::VCoeff16BT709 = _mm_set_epi32(0, 157, -142, -14);
 
 __m128i SubPicBlender::zero = _mm_setzero_si128();
+
+bool SubPicBlender::m_bBT601ConvTablesInitialized = false;
+
+SubPicBlender::SubPicBlender()
+{
+	if (m_bBT601ConvTablesInitialized == false)
+	{
+		m_bBT601ConvTablesInitialized = true;
+
+		for (short i = 0; i < 256; i++)
+		{
+			YRConvTableBT601[i] = 77 * i;
+			YGConvTableBT601[i] = 150 * i;
+			YBConvTableBT601[i] = 29 * i;
+
+			URConvTableBT601[i] = -37 * i;
+			UGConvTableBT601[i] = -74 * i;
+			UBConvTableBT601[i] = 111 * i;
+
+			VRConvTableBT601[i] = 112 * i;
+			VGConvTableBT601[i] = -94 * i;
+			VBConvTableBT601[i] = -18 * i;
+		}
+	}
+}

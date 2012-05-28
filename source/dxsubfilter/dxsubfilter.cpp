@@ -384,10 +384,6 @@ HRESULT CDXSubFilter::NewSegment(
 	m_rtEnd = tStop;
 	m_dPlaybackRate = dRate;
 
-	// For some reason, IMediaFilter::Run is called AFTER we start receiving our first sample
-	// from the input pin, so we initialize m_tStart here to something or else when we go to 
-	// calculate current playback time, we'll be way wrong.
-	m_pClock->GetTime(&m_tStart.m_time);
 	return CTransformFilter::NewSegment(tStart, tStop, dRate);
 }
 
@@ -441,9 +437,9 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 	}
 
 	REFERENCE_TIME rtStart, rtEnd;
-	hr = pIn->GetTime(&rtStart, &rtEnd);
-	UNREFERENCED_PARAMETER(rtStart);
 	UNREFERENCED_PARAMETER(rtEnd);
+	hr = pIn->GetTime(&rtStart, &rtEnd);
+
 	// Get current playback time
 	rtNow = CalcCurrentTime(rtStart);
 

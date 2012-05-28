@@ -759,6 +759,9 @@ void SRTSubtitleRenderer::FillSubtitlePictureData(SubtitlePicture& subpic)
 	BYTE* bitmapData = nullptr;
 	pBitmapLock->GetDataPointer(&byteCount, &bitmapData);
 
+	// Why does the byte count not match up with stride and rectangle dimensions?
+	subpic.m_uHeight = byteCount / pcbStride;
+
 	unsigned char* data = static_cast<unsigned char*>(_aligned_malloc(byteCount, 16));
 	
 	memcpy(data, bitmapData, byteCount);

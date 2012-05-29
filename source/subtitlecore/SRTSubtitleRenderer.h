@@ -63,12 +63,15 @@ namespace SubtitleCore
 		IDWriteFactory* m_pDWriteFactory;
 		IWICImagingFactory* m_pWICFactory;
 		ID2D1Factory* m_pD2DFactory;
+
 		IDWriteTextFormat* m_pDWTextFormat;
+
 		ID2D1RenderTarget* m_pRT;
 		IWICBitmap* m_pWICBitmap;
+
 		ID2D1SolidColorBrush* m_pSolidColorBrush;
-		ID3D10Device1* m_pDevice;
-		ID3D10Texture2D* m_pTexture;
+		ID2D1SolidColorBrush* m_pOutlineColorBrush;
+		ID2D1SolidColorBrush* m_pShadowColorBrush;
 
 		float m_fDPIScaleX;
 		float m_fDPIScaleY;
@@ -77,6 +80,7 @@ namespace SubtitleCore
 		// while 1 places it below.
 		float m_fSubtitlePlacementDirection;
 
+		// Sum of left + right and top + bottom margins
 		float m_fHorizontalMargin;
 		float m_fVerticalMargin;
 

@@ -20,9 +20,9 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 	, m_pRT(nullptr)
 	, m_pWICBitmap(nullptr)
 	, m_pSolidColorBrush(nullptr)
-	, m_pDevice(nullptr)
-	, m_pTexture(nullptr)
 	, m_pWICFactory(nullptr)
+	, m_pOutlineColorBrush(nullptr)
+	, m_pShadowColorBrush(nullptr)
 {
 	m_SubtitleType = SBT_SRT;
 
@@ -102,69 +102,35 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 		m_fSubtitlePlacementDirection = 1.0f;
 	}
 
-	//hr = D3D10CreateDevice1(NULL, D3D10_DRIVER_TYPE_HARDWARE, NULL, 
-	//	D3D10_CREATE_DEVICE_BGRA_SUPPORT, D3D10_FEATURE_LEVEL_10_1, D3D10_1_SDK_VERSION, &m_pDevice);
-
-	//if (SUCCEEDED(hr))
-	//{
-	//	D3D10_TEXTURE2D_DESC texDesc;
-	//	ZeroMemory(&texDesc, sizeof(texDesc));
-	//	texDesc.ArraySize = 1;
-	//	texDesc.BindFlags = D3D10_BIND_RENDER_TARGET;
-	//	texDesc.CPUAccessFlags = 0;
-	//	texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	//	texDesc.Height = m_VideoInfo.Height;
-	//	texDesc.Width = m_VideoInfo.Width;
-	//	texDesc.MipLevels = 1;
-	//	texDesc.MiscFlags = 0;
-	//	texDesc.SampleDesc.Count = 1;
-	//	texDesc.SampleDesc.Quality = 0;
-	//	texDesc.Usage = D3D10_USAGE_DEFAULT;
-
-	//	hr = m_pDevice->CreateTexture2D(&texDesc, NULL, &m_pTexture);
-	//}
-
-	//IDXGISurface* pDXGISurface = nullptr;
-	//if (SUCCEEDED(hr))
-	//{
-	//	hr = m_pTexture->QueryInterface(&pDXGISurface);
-	//}
-
-	//if (SUCCEEDED(hr))
-	//{
-	//	// Create a D2D render target which can draw into our offscreen D3D
-	//	// surface. Given that we use a constant size for the texture, we
-	//	// fix the DPI at 96.
-	//	D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-	//			D2D1_RENDER_TARGET_TYPE_DEFAULT,
-	//			D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
-	//			96,
-	//			96);
-
-	//	hr = m_pD2DFactory->CreateDxgiSurfaceRenderTarget(	pDXGISurface,
-	//														&props,
-	//														&m_pRT);
-	//}
-
-	//SafeRelease(&pDXGISurface);
-
 	if (SUCCEEDED(hr))
 	{
 		hr = m_pRT->CreateSolidColorBrush(ConvertABGRToD2DCOLORF(m_SubCoreConfig.m_FontPrimaryFillColor), 
 											&m_pSolidColorBrush);
 	}
+
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pRT->CreateSolidColorBrush(ConvertABGRToD2DCOLORF(m_SubCoreConfig.m_FontOutlineColor),
+											&m_pOutlineColorBrush);
+	}
+
+	if (SUCCEEDED(hr))
+	{
+		hr = m_pRT->CreateSolidColorBrush(ConvertABGRToD2DCOLORF(m_SubCoreConfig.m_FontShadowColor),
+											&m_pShadowColorBrush);
+	}
 }
 
 SRTSubtitleRenderer::~SRTSubtitleRenderer()
 {
+	SafeRelease(&m_pShadowColorBrush);
+	SafeRelease(&m_pOutlineColorBrush);
+	SafeRelease(&m_pSolidColorBrush);
 	SafeRelease(&m_pDWTextFormat);
-	SafeRelease(&m_pD2DFactory);
 	SafeRelease(&m_pRT);
 	SafeRelease(&m_pWICBitmap);
-	SafeRelease(&m_pSolidColorBrush);
-	SafeRelease(&m_pDevice);
-	SafeRelease(&m_pTexture);
 	SafeRelease(&m_pWICFactory);
+	SafeRelease(&m_pD2DFactory);
 }
 bool SRTSubtitleRenderer::ParseScript(const std::vector<std::wstring>& script)
 {
@@ -258,6 +224,16 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 
 	startPos = 0;
 
+	HRESULT hr = S_OK;
+	IDWriteFontCollection* pFontCollection = nullptr;
+	hr = m_pDWriteFactory->GetSystemFontCollection(&pFontCollection);
+
+	UINT32 fontIndex;
+	BOOL fontExists;
+	hr = pFontCollection->FindFamilyName(m_SubCoreConfig.m_FontName.c_str(), &fontIndex, &fontExists);
+
+	IDWriteFontFamily* pFontFamily = nullptr;
+	hr = pFontCollection->GetFontFamily(fontIndex, &pFontFamily);
 	while ((openBracketPos = line.find(L"<", startPos)) != std::wstring::npos)
 	{
 		finalStartPos = finalLine.size();
@@ -294,6 +270,13 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 					trf.Strikethrough = TRUE;
 				}
 			}
+			IDWriteFont* pFont = nullptr;
+			hr = pFontFamily->GetFirstMatchingFont(trf.Weight, m_SubCoreConfig.m_FontStretch, trf.Style,
+													&pFont);
+
+			hr = pFont->CreateFontFace(&(trf.pFontFace));
+
+			SafeRelease(&pFont);
 
 			entry->SubTextFormat.push_back(trf);
 		}
@@ -316,6 +299,8 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 
 		startPos = closeBracketPos+1;
 	}
+	SafeRelease(&pFontFamily);
+	SafeRelease(&pFontCollection);
 
 	if (startPos != line.size() - 1)
 	{
@@ -478,73 +463,10 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 			origin.x = static_cast<float>(m_SubCoreConfig.m_LineMarginLeft);
 			origin.y = static_cast<float>(m_SubCoreConfig.m_LineMarginTop);
 
-			// Process the first entry first so we can offset the remaining subtitles properly
-			std::vector<SRTSubtitleEntry> subtitleEntries = 
-				m_SubtitleMap[m_ValidSubtitleTimes.begin()->first];
-
-			IDWriteTextLayout* pTextLayout = nullptr;
-
-			hr = m_pDWriteFactory->CreateTextLayout(subtitleEntries.begin()->Text.c_str(), 
-										subtitleEntries.begin()->Text.length(),
-										m_pDWTextFormat,
-										static_cast<float>(m_VideoInfo.Width) - m_fHorizontalMargin,
-										static_cast<float>(m_VideoInfo.Height) - m_fVerticalMargin,
-										&pTextLayout);
-
-			for (auto formatIt = subtitleEntries.begin()->SubTextFormat.begin(); 
-				formatIt != subtitleEntries.begin()->SubTextFormat.end(); 
-				++formatIt)
+			// Process time spans
+			for(auto it = m_ValidSubtitleTimes.begin(); it != m_ValidSubtitleTimes.end(); ++it)
 			{
-				pTextLayout->SetFontWeight(formatIt->Weight, formatIt->Range);
-				pTextLayout->SetFontStyle(formatIt->Style, formatIt->Range);
-				pTextLayout->SetUnderline(formatIt->Underline, formatIt->Range);
-				pTextLayout->SetStrikethrough(formatIt->Strikethrough, formatIt->Range);
-			}
-
-			DWRITE_TEXT_METRICS metrics;
-			pTextLayout->GetMetrics(&metrics);
-
-			// We can assume overhang metrics will always be negative because our layout box is
-			// the size of the video frame minus the margins
-			DWRITE_OVERHANG_METRICS overhang;
-			pTextLayout->GetOverhangMetrics(&overhang);
-
-			m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
-
-			SafeRelease(&pTextLayout);
-
-			int originX, originY;
-			size_t width, height;
-			originX = static_cast<int>(metrics.left + origin.x);
-			originY = static_cast<int>(metrics.top + origin.y);
-			ConvertDIPToPixels(metrics.width + (overhang.right - overhang.left), 
-				metrics.height, width, height);
-
-			origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection;
-
-			rsub.StartTime = m_ValidSubtitleTimes.begin()->first;
-			rsub.EndTime = m_ValidSubtitleTimes.begin()->second;
-			rsub.SubPic = SubtitlePicture(originX, originY, width, height, width, SBPF_PBGRA32, nullptr);
-			
-			m_RenderedSubtitles.push_back(rsub);
-			ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
-
-			// Process remaining SRT entries for the first time span
-			for(auto subIt = subtitleEntries.begin()+1; subIt != subtitleEntries.end(); ++subIt)
-			{
-				rsub.StartTime = subIt->StartTime;
-				rsub.EndTime = subIt->EndTime;
-				rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin);
-
-				m_RenderedSubtitles.push_back(rsub);
-				ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
-			}
-
-			// Process remaining time spans
-			auto it = m_ValidSubtitleTimes.begin();
-			for(++it; it != m_ValidSubtitleTimes.end(); ++it)
-			{
-				subtitleEntries = m_SubtitleMap[it->first];
+				std::vector<SRTSubtitleEntry> subtitleEntries = m_SubtitleMap[it->first];
 
 				for(auto subIt = subtitleEntries.begin(); subIt != subtitleEntries.end(); ++subIt)
 				{

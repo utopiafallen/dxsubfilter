@@ -23,7 +23,33 @@ namespace SubtitleCore
 			IDWriteFontFace* pFontFace;
 
 			TextRangeFormat() : pFontFace(nullptr) {}
+			TextRangeFormat(const TextRangeFormat& other) 
+				: pFontFace(other.pFontFace)
+				, Range(other.Range)
+				, Style(other.Style)
+				, Weight(other.Weight)
+				, Underline(other.Underline)
+				, Strikethrough(other.Strikethrough)
+			{
+				pFontFace = other.pFontFace;
+				pFontFace->AddRef();
+			}
 			~TextRangeFormat() { SafeRelease(&pFontFace); }
+
+			TextRangeFormat& operator= (TextRangeFormat& other)
+			{
+				Range = other.Range;
+				Style = other.Style;
+				Weight = other.Weight;
+				Underline = other.Underline;
+				Strikethrough = other.Strikethrough;
+
+				pFontFace->Release();
+				pFontFace = other.pFontFace;
+				pFontFace->AddRef();
+
+				return *this;
+			}
 		};
 
 		// Contains text formatting spans 

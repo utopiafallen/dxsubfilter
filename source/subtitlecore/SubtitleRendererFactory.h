@@ -47,10 +47,13 @@ namespace SubtitleCore
 		std::shared_ptr<ISubtitleRenderer> CreateSubtitleRenderer(SubtitleType type, bool bUniqueInstance = false);
 
 		// Sets SubtitleCore configuration data. Must be called along with SetVideoInfo before
-		// CreateSubtitleRenderer will return valid results
+		// CreateSubtitleRenderer will return valid results. Calls to this will invalidate and
+		// clear the cache so any previously created SubtitleRenderers should no longer be used.
 		void SetSubtitleCoreConfig(SubtitleCoreConfigurationData& config);
 
-		// Sets the video info of the video frame that subtitles will be rendered into.
+		// Sets the video info of the video frame that subtitles will be rendered into. Calls to 
+		// this will invalidate and clear the cache so any previously created SubtitleRenderers 
+		// should no longer be used.
 		void SetVideoInfo(VideoInfo& vidInfo);
 	private: // Functions
 		SubtitleRendererFactory();

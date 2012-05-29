@@ -32,6 +32,8 @@ void SubtitleRendererFactory::SetSubtitleCoreConfig(SubtitleCoreConfigurationDat
 
 	m_SubCoreConfig.reset();
 	m_SubCoreConfig = std::make_shared<SubtitleCoreConfigurationData>(config);
+
+	m_SubtitleRendererCache.clear();
 }
 
 void SubtitleRendererFactory::SetVideoInfo(VideoInfo& vidInfo)
@@ -40,6 +42,8 @@ void SubtitleRendererFactory::SetVideoInfo(VideoInfo& vidInfo)
 
 	m_VideoInfo.reset();
 	m_VideoInfo = std::make_shared<VideoInfo>(vidInfo);
+
+	m_SubtitleRendererCache.clear();
 }
 
 std::shared_ptr<ISubtitleRenderer> SubtitleRendererFactory::CreateSubtitleRenderer(SubtitleType type, bool bUniqueInstance)

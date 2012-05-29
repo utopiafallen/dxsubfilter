@@ -4,6 +4,7 @@
 #pragma once
 
 #include "stdafx.h"
+#include "DirectXHelpers.h"
 
 namespace SubtitleCore
 {
@@ -17,10 +18,15 @@ namespace SubtitleCore
 			DWRITE_FONT_STYLE Style;
 			BOOL Underline;
 			BOOL Strikethrough;
+
+			// Font face for this particular formatting
+			IDWriteFontFace* pFontFace;
+
+			TextRangeFormat() : pFontFace(nullptr) {}
+			~TextRangeFormat() { SafeRelease(&pFontFace); }
 		};
 
-		// Contains spans where text formatting differs from main formatting, e.g.
-		// "Hello <b>world</b>" "world" would be stored in SubTextFormat.
+		// Contains text formatting spans 
 		std::vector<TextRangeFormat> SubTextFormat;
 
 		std::wstring Text;
@@ -28,7 +34,7 @@ namespace SubtitleCore
 		REFERENCE_TIME StartTime;
 		REFERENCE_TIME EndTime;
 
-		SRTSubtitleEntry() : EndTime(0) {}
+		SRTSubtitleEntry() : StartTime(0), EndTime(0) {}
 	};
 }
 

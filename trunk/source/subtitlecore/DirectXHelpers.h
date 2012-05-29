@@ -1,7 +1,7 @@
 // Convenience functions for DirectWrite/Direct2D interfacing. Functions left in the global
 // namespace indicate that they aren't intrinsically tied to implementation details in 
 // SubtitleCore
-
+#pragma once
 #include <D2DBaseTypes.h>
 #include "SubtitleCoreEnumerations.h"
 

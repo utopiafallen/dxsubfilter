@@ -1,5 +1,5 @@
 // Convenience function to convert between units
-
+#pragma once
 #include "strmif.h"
 
 namespace SubtitleCoreUtilities

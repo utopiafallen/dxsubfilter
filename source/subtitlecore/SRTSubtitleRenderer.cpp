@@ -180,11 +180,11 @@ bool SRTSubtitleRenderer::ParseScript(const std::vector<std::wstring>& script)
 
 			// Merge lines until we reach an empty line which delineates the start of a new
 			// subtitle block
-			std::wstring mergedLine;
-			size_t index = i+1;
+			std::wstring mergedLine = script[i+1];
+			size_t index = i+2;
 			while (script[index].empty() == false)
 			{
-				mergedLine += script[index] + L"\n";
+				mergedLine += L"\n" + script[index];
 				++index;
 			}
 			// Move overall script parsing position to start of the next subtitle block
@@ -475,6 +475,9 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 
 			D2D_POINT_2F origin;
 
+			origin.x = static_cast<float>(m_SubCoreConfig.m_LineMarginLeft);
+			origin.y = static_cast<float>(m_SubCoreConfig.m_LineMarginTop);
+
 			// Process the first entry first so we can offset the remaining subtitles properly
 			std::vector<SRTSubtitleEntry> subtitleEntries = 
 				m_SubtitleMap[m_ValidSubtitleTimes.begin()->first];
@@ -501,11 +504,10 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 			DWRITE_TEXT_METRICS metrics;
 			pTextLayout->GetMetrics(&metrics);
 
+			// We can assume overhang metrics will always be negative because our layout box is
+			// the size of the video frame minus the margins
 			DWRITE_OVERHANG_METRICS overhang;
 			pTextLayout->GetOverhangMetrics(&overhang);
-
-			origin.x = static_cast<float>(m_SubCoreConfig.m_LineMarginLeft);
-			origin.y = static_cast<float>(m_SubCoreConfig.m_LineMarginTop);
 
 			m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
 

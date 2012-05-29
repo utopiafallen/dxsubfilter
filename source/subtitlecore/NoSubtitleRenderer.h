@@ -1,3 +1,7 @@
+#ifndef NOSUBTITLERENDERER_H
+#define NOSUBTITLERENDERER_H
+#pragma once
+
 #include "stdafx.h"
 #include "ISubtitleRenderer.h"
 
@@ -26,3 +30,5 @@ namespace SubtitleCore
 		virtual void GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePicture** ppOutSubPics);
 	};
 }
+
+#endif

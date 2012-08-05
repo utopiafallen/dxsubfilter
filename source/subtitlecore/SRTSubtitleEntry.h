@@ -32,7 +32,11 @@ namespace SubtitleCore
 				, Strikethrough(other.Strikethrough)
 			{
 				pFontFace = other.pFontFace;
-				pFontFace->AddRef();
+
+				if (pFontFace)
+				{
+					pFontFace->AddRef();
+				}
 			}
 			~TextRangeFormat() { SafeRelease(&pFontFace); }
 
@@ -44,9 +48,17 @@ namespace SubtitleCore
 				Underline = other.Underline;
 				Strikethrough = other.Strikethrough;
 
-				pFontFace->Release();
+				if (pFontFace)
+				{
+					pFontFace->Release();
+				}
+
 				pFontFace = other.pFontFace;
-				pFontFace->AddRef();
+
+				if (pFontFace)
+				{
+					pFontFace->AddRef();
+				}
 
 				return *this;
 			}

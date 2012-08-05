@@ -36,7 +36,7 @@ namespace SubtitleCore
 		// specified. Data is guaranteed to be 16-byte aligned.
 		std::shared_ptr<unsigned char> m_Data;
 
-		// Custom deleter for m_Data.
+		// Custom deleter for m_Data. Needed for shared_ptrs.
 		template <typename T>
 		struct Deleter
 		{

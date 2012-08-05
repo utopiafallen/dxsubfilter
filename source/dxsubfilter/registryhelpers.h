@@ -1,5 +1,7 @@
 // Helper functions for loading, writing and removing configuration settings from the
 // registry. Configuration data is stored in HCKU/Software/dxsubfilter.
+#ifndef DXSUBFILTERREGHELPER_H
+#define DXSUBFILTERREGHELPER_H
 #pragma once
 
 #include "SubtitleCoreEnumerations.h"
@@ -22,3 +24,5 @@ namespace DXSubFilter
 	// Remove filter configuration data from registry.
 	void RemoveFilterConfigurationDataFromRegistry();
 };
+
+#endif

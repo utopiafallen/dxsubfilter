@@ -2,7 +2,8 @@
 #pragma once
 #include "strmif.h"
 
-namespace SubtitleCoreUtilities
+// SCU - SubtitleCoreUtilities
+namespace SCU
 {
 	inline REFERENCE_TIME ConvertTimeToReferenceTime(size_t hours, size_t minutes, size_t seconds, 
 												size_t milliseconds)
@@ -11,14 +12,5 @@ namespace SubtitleCoreUtilities
 				(minutes * 600000000i64) + 
 				(seconds * 10000000i64) + 
 				(milliseconds * 10000i64);
-	}
-
-	inline float ConvertFontPointToDIP(size_t pt)
-	{
-		// Note to self: See the following link for explanation of magic numbers:
-		// http://msdn.microsoft.com/en-us/library/ff684173(v=vs.85).aspx
-
-		static const float conversion_factor = 96.0f/72.0f;
-		return static_cast<float>(pt) * conversion_factor;
 	}
 };

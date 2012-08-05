@@ -103,9 +103,14 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CustomDrawingEffects.h" />
+    <ClInclude Include="CustomTextRenderer.h" />
     <ClInclude Include="DirectXHelpers.h" />
+    <ClInclude Include="DrawingEffectRendererFactory.h" />
+    <ClInclude Include="ICustomDrawingEffectRenderer.h" />
     <ClInclude Include="ISubtitleRenderer.h" />
     <ClInclude Include="NoSubtitleRenderer.h" />
+    <ClInclude Include="OutlineDrawingEffectRenderer.h" />
     <ClInclude Include="SRTSubtitleEntry.h" />
     <ClInclude Include="SRTSubtitleRenderer.h" />
     <ClInclude Include="stdafx.h" />
@@ -115,6 +120,8 @@
     <ClInclude Include="Conversions.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CustomTextRenderer.cpp" />
+    <ClCompile Include="DrawingEffectRendererFactory.cpp" />
     <ClCompile Include="NoSubtitleRenderer.cpp" />
     <ClCompile Include="SRTSubtitleRenderer.cpp" />
     <ClCompile Include="stdafx.cpp">

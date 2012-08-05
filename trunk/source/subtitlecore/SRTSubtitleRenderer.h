@@ -22,7 +22,7 @@ namespace SubtitleCore
 	//		<s></s>			HTML-Strikethrough
 	//	and that is it. All other tags will simply be displayed as if it were normal text. SRT
 	//	really should just be a plain-text format; styling and positioning should be done through
-	//	ASS.
+	//	ASS. 
 	class SRTSubtitleRenderer : public ISubtitleRenderer
 	{
 	public:
@@ -115,9 +115,6 @@ namespace SubtitleCore
 
 		// Computes timestamps and stores them into rtStart and rtEnd
 		void ComputeTimestamp(const std::wstring& line, REFERENCE_TIME& rtStart, REFERENCE_TIME& rtEnd);
-
-		template<typename T>
-		void ConvertDIPToPixels(float dipX, float dipY, T& outX, T& outY);
 
 		// Renders an SRTSubtitleEntry and generates a SubtitlePicture. Can only be called between
 		// BeginDraw() and EndDraw(). origin will be modified to contain the origin that this 

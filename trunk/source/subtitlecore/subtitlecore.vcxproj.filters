@@ -29,6 +29,12 @@
     <Filter Include="Source Files\NoSubtitles">
       <UniqueIdentifier>{b9a0657b-cf5f-4614-adc6-a72a5b428ab6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\CustomTextRenderer">
+      <UniqueIdentifier>{6f703026-884a-49c4-8649-637d17836bce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CustomTextRenderer\DrawingEffectRenderers">
+      <UniqueIdentifier>{bad18525-2716-47bc-bcbe-2ab2d77125ee}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
@@ -61,6 +67,21 @@
     <ClInclude Include="NoSubtitleRenderer.h">
       <Filter>Source Files\NoSubtitles</Filter>
     </ClInclude>
+    <ClInclude Include="CustomTextRenderer.h">
+      <Filter>Source Files\CustomTextRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomDrawingEffects.h">
+      <Filter>Source Files\CustomTextRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="ICustomDrawingEffectRenderer.h">
+      <Filter>Source Files\CustomTextRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="OutlineDrawingEffectRenderer.h">
+      <Filter>Source Files\CustomTextRenderer\DrawingEffectRenderers</Filter>
+    </ClInclude>
+    <ClInclude Include="DrawingEffectRendererFactory.h">
+      <Filter>Source Files\CustomTextRenderer\DrawingEffectRenderers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -74,6 +95,12 @@
     </ClCompile>
     <ClCompile Include="NoSubtitleRenderer.cpp">
       <Filter>Source Files\NoSubtitles</Filter>
+    </ClCompile>
+    <ClCompile Include="CustomTextRenderer.cpp">
+      <Filter>Source Files\CustomTextRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="DrawingEffectRendererFactory.cpp">
+      <Filter>Source Files\CustomTextRenderer\DrawingEffectRenderers</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

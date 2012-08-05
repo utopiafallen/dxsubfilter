@@ -67,9 +67,9 @@ namespace DXSubFilter
 		// playback duration i.e. absolute playback position. We can then use these values to
 		// calculate time stamps of input samples.
 		virtual HRESULT NewSegment(
-                        REFERENCE_TIME tStart,
-                        REFERENCE_TIME tStop,
-                        double dRate);
+						REFERENCE_TIME tStart,
+						REFERENCE_TIME tStop,
+						double dRate);
 
 		// Perform transform. Note that this only handles the overlaying of the subtitle onto
 		// the video frame. Subtitle data is received and processed internally in CSubtitleInputPin

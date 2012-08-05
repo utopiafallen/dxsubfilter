@@ -1,6 +1,8 @@
 // Convenience functions for DirectWrite/Direct2D interfacing. Functions left in the global
 // namespace indicate that they aren't intrinsically tied to implementation details in 
 // SubtitleCore
+#ifndef SCDXHELEPERS_H
+#define SCDXHELEPERS_H
 #pragma once
 #include <D2DBaseTypes.h>
 #include "SubtitleCoreEnumerations.h"
@@ -29,9 +31,30 @@ inline D2D_COLOR_F ConvertABGRToD2DCOLORF(unsigned int ABGR)
 	return result;
 }
 
-namespace SubtitleCoreUtilities
+// SCU - SubtitleCoreUtitlies
+namespace SCU
 {
 	using namespace SubtitleCore;
+
+	inline size_t ConvertDIPToPixels(float dip, float fDPIScale)
+	{
+		// Round up
+		return static_cast<size_t>(dip * fDPIScale + 0.5f);
+	}
+
+	inline float ConvertPixelsToDIP(size_t pixels, float fDPIScale)
+	{
+		return static_cast<float>(pixels) / fDPIScale;
+	}
+
+	inline float ConvertFontPointToDIP(size_t pt)
+	{
+		// Note to self: See the following link for explanation of magic numbers:
+		// http://msdn.microsoft.com/en-us/library/ff684173(v=vs.85).aspx
+
+		static const float conversion_factor = 96.0f/72.0f;
+		return static_cast<float>(pt) * conversion_factor;
+	}
 
 	inline void ConvertDLAToDWRiteEnums(SubtitleCoreConfigurationData::DefaultLineAlignment DLA, 
 								DWRITE_TEXT_ALIGNMENT& outTextAlign,
@@ -102,3 +125,5 @@ namespace SubtitleCoreUtilities
 		}
 	}
 };
+
+#endif

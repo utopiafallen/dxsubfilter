@@ -1,3 +1,5 @@
+#ifndef SUBPICBLENDER_H
+#define SUBPICBLENDER_H
 #pragma once
 
 #include "stdafx.h"
@@ -410,3 +412,5 @@ namespace DXSubFilter
 		}
 	};
 };
+
+#endif

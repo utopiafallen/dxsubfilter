@@ -388,9 +388,9 @@ HRESULT CDXSubFilter::SetMediaType(PIN_DIRECTION direction,const CMediaType *pmt
 }
 
 HRESULT CDXSubFilter::NewSegment(
-                        REFERENCE_TIME tStart,
-                        REFERENCE_TIME tStop,
-                        double dRate)
+						REFERENCE_TIME tStart,
+						REFERENCE_TIME tStop,
+						double dRate)
 {
 	m_rtStart = tStart;
 	m_rtEnd = tStop;
@@ -472,7 +472,7 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 		std::vector<SubtitleCore::SubtitlePicture*> subpics(subpicCount, nullptr);
 		m_pInputSubtitlePin->m_SubtitleRenderer->GetSubtitlePicture(rtNow, &subpics[0]);
 
-		for (auto it = subpics.begin(); it != subpics.end(); ++it)
+		for (auto it = subpics.begin(), itEnd = subpics.end(); it != itEnd; ++it)
 		{
 			(*m_pSubPicBlender)(*it, m_pAlignedBuffer, m_uInputVideoWidth, m_uInputVideoHeight);
 		}

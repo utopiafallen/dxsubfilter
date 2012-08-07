@@ -28,39 +28,39 @@ AMOVIESETUP_MEDIATYPE sudSubtitleMediaTypes[] = {
 };
 
 AMOVIESETUP_PIN sudOutputPin = {
-    L"",								// Obsolete, not used.
-    FALSE,								// Is this pin rendered?
-    TRUE,								// Is it an output pin?
-    FALSE,								// Can the filter create zero instances?
-    FALSE,								// Does the filter create multiple instances?
-    &GUID_NULL,							// Obsolete.
-    NULL,								// Obsolete.
-    ARRAYSIZE(sudVideoMediaTypes),      // Number of media types.
-    sudVideoMediaTypes					// Pointer to media types.
+	L"",								// Obsolete, not used.
+	FALSE,								// Is this pin rendered?
+	TRUE,								// Is it an output pin?
+	FALSE,								// Can the filter create zero instances?
+	FALSE,								// Does the filter create multiple instances?
+	&GUID_NULL,							// Obsolete.
+	NULL,								// Obsolete.
+	ARRAYSIZE(sudVideoMediaTypes),      // Number of media types.
+	sudVideoMediaTypes					// Pointer to media types.
 };
 
 AMOVIESETUP_PIN sudInputVideoPin = {
 	L"",								// Obsolete, not used.
-    FALSE,								// Is this pin rendered?
-    FALSE,								// Is it an output pin?
-    FALSE,								// Can the filter create zero instances?
-    FALSE,								// Does the filter create multiple instances?
-    &GUID_NULL,							// Obsolete.
-    NULL,								// Obsolete.
-    ARRAYSIZE(sudVideoMediaTypes),      // Number of media types.
-    sudVideoMediaTypes					// Pointer to media types.
+	FALSE,								// Is this pin rendered?
+	FALSE,								// Is it an output pin?
+	FALSE,								// Can the filter create zero instances?
+	FALSE,								// Does the filter create multiple instances?
+	&GUID_NULL,							// Obsolete.
+	NULL,								// Obsolete.
+	ARRAYSIZE(sudVideoMediaTypes),      // Number of media types.
+	sudVideoMediaTypes					// Pointer to media types.
 };
 
 AMOVIESETUP_PIN sudInputSubtitlePin = {
 	L"",								// Obsolete, not used.
-    FALSE,								// Is this pin rendered?
-    FALSE,								// Is it an output pin?
-    FALSE,								// Can the filter create zero instances?
-    FALSE,								// Does the filter create multiple instances?
-    &GUID_NULL,							// Obsolete.
-    NULL,								// Obsolete.
-    ARRAYSIZE(sudSubtitleMediaTypes),   // Number of media types.
-    sudSubtitleMediaTypes				// Pointer to media types.
+	FALSE,								// Is this pin rendered?
+	FALSE,								// Is it an output pin?
+	FALSE,								// Can the filter create zero instances?
+	FALSE,								// Does the filter create multiple instances?
+	&GUID_NULL,							// Obsolete.
+	NULL,								// Obsolete.
+	ARRAYSIZE(sudSubtitleMediaTypes),   // Number of media types.
+	sudSubtitleMediaTypes				// Pointer to media types.
 };
 
 AMOVIESETUP_PIN sudDXSubFilterPins[] = {
@@ -70,11 +70,11 @@ AMOVIESETUP_PIN sudDXSubFilterPins[] = {
 };
 
 AMOVIESETUP_FILTER sudDXSubFilterReg = {
-    &CLSID_DXSubFilter,				// Filter CLSID.
+	&CLSID_DXSubFilter,				// Filter CLSID.
 	L"DXSubFilter",					// Filter name.
-    MERIT_NORMAL,					// Merit.
+	MERIT_NORMAL,					// Merit.
 	ARRAYSIZE(sudDXSubFilterPins),	// Number of pin types.
-    sudDXSubFilterPins				// Pointer to pin information.
+	sudDXSubFilterPins				// Pointer to pin information.
 };
 //------------------------------------------------------------------------------
 
@@ -85,7 +85,7 @@ AMOVIESETUP_FILTER sudDXSubFilterReg = {
    function when it is asked to create a CLSID_DXSubFilter object */
 
 CFactoryTemplate g_Templates[1] = {
-    {
+	{
 		L"CDXSubFilter",							// Name
 		&CLSID_DXSubFilter,							// CLSID
 		DXSubFilter::CDXSubFilter::CreateInstance,	// Creation function
@@ -114,23 +114,23 @@ DECLSPEC_NOINLINE
 BOOL 
 WINAPI
 DllEntryPoint(
-    HINSTANCE hInstance, 
-    ULONG ulReason, 
-    __inout_opt LPVOID pv
-    )
+	HINSTANCE hInstance, 
+	ULONG ulReason, 
+	__inout_opt LPVOID pv
+	)
 {
-    if ( ulReason == DLL_PROCESS_ATTACH ) {
-        // Must happen before any other code is executed.  Thankfully - it's re-entrant
-        __security_init_cookie();
-    }
+	if ( ulReason == DLL_PROCESS_ATTACH ) {
+		// Must happen before any other code is executed.  Thankfully - it's re-entrant
+		__security_init_cookie();
+	}
 
-    return _DllEntryPoint(hInstance, ulReason, pv);
+	return _DllEntryPoint(hInstance, ulReason, pv);
 }
 
 //	DLL Entry Point	for normal DLLs.
 BOOL APIENTRY DllMain( HMODULE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved
+					   DWORD  ul_reason_for_call,
+					   LPVOID lpReserved
 					 )
 {
 	switch (ul_reason_for_call)

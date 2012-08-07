@@ -31,7 +31,8 @@ namespace DXSubFilter
 	// [U]	=	[-25	-86	   111] [G]
 	// [V]		[157	-142   -14]	[B]
 
-	// Use look up tables rather than perform actual multiplication
+	// Use look up tables rather than perform actual multiplication. Made available in the
+	// header in case I need these elsewhere.
 	_MM_ALIGN16 extern short YRConvTableBT601[256];
 	_MM_ALIGN16 extern short YGConvTableBT601[256];
 	_MM_ALIGN16 extern short YBConvTableBT601[256];
@@ -128,169 +129,14 @@ namespace DXSubFilter
 	class BlendBGRAWithNV12BT601 : public SubPicBlender
 	{
 	public:
-		inline virtual void operator()(SubtitleCore::SubtitlePicture* subpic, BYTE* pData,
-			size_t dstWidth, size_t dstHeight)
-		{
-			BYTE* pSubPicData = subpic->m_Data.get();
-			BYTE* pUVPlane = pData + dstWidth * dstHeight; // NV12 has UV data packed into the same plane
+		virtual void operator()(SubtitleCore::SubtitlePicture* subpic, BYTE* pData,
+			size_t dstWidth, size_t dstHeight);
+	};
 
-			size_t uSubPicStride = subpic->m_uStride;
-			size_t uSubPicWidth = subpic->m_uWidth;
-			size_t uSubPicHeight = subpic->m_uHeight;
-			size_t uSubPicBGRAStride = uSubPicStride / 4;
-
-			int iDstOffsetX = subpic->m_iOriginX;
-			int iDstOffsetY = subpic->m_iOriginY;
-
-			// 4:2:0 downsampling
-			size_t uUVPlaneHeight = (uSubPicHeight-1) / 2;
-			size_t uUVPlaneWidth = (uSubPicWidth-1) / 2;
-
-			int iDstOffsetXUV = iDstOffsetX / 2;
-			int iDstOffsetYUV = iDstOffsetY / 2;
-
-			// In case dimensions are not divisible by our unrolled processing size
-			size_t uSubPicUnrolledWidth = (uSubPicWidth / 8) * 8;
-
-			// Blend Y plane
-			Concurrency::parallel_for(0U, uSubPicHeight, [&](size_t y)
-			//for (size_t y = 0; y < uSubPicHeight; y++)
-			{
-				for (size_t x = 0; x < uSubPicUnrolledWidth; x+=8)
-				{
-					BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y + x * 4; // 4 bytes per pixel
-					BYTE* __restrict pDst = pData + dstWidth * (iDstOffsetY + y) + x + iDstOffsetX;
-
-					unsigned int* __restrict pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
-
-					// Pixel 1
-					unsigned int BGRA = pBGRAData[0];
-
-					short A = (BGRA & 0xFF000000) >> 24;
-
-					pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																AlphaBlendTable[pDst[0]][(255-A)]);
-
-					// Pixel 2
-					BGRA = pBGRAData[1];
-
-					A = (BGRA & 0xFF000000) >> 24;
-
-					pDst[1] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																AlphaBlendTable[pDst[1]][(255-A)]);
-
-					// Pixel 3
-					BGRA = pBGRAData[2];
-
-					A = (BGRA & 0xFF000000) >> 24;
-
-					pDst[2] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																AlphaBlendTable[pDst[2]][(255-A)]);
-
-					// Pixel 4
-					BGRA = pBGRAData[3];
-
-					A = (BGRA & 0xFF000000) >> 24;
-
-					pDst[3] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																AlphaBlendTable[pDst[3]][(255-A)]);
-
-					// Pixel 5
-					BGRA = pBGRAData[4];
-
-					A = (BGRA & 0xFF000000) >> 24;
-
-					pDst[4] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																AlphaBlendTable[pDst[4]][(255-A)]);
-
-					// Pixel 6
-					BGRA = pBGRAData[5];
-
-					A = (BGRA & 0xFF000000) >> 24;
-
-					pDst[5] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																AlphaBlendTable[pDst[5]][(255-A)]);
-
-					// Pixel 7
-					BGRA = pBGRAData[6];
-
-					A = (BGRA & 0xFF000000) >> 24;
-
-					pDst[6] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																AlphaBlendTable[pDst[6]][(255-A)]);
-
-					// Pixel 8
-					BGRA = pBGRAData[7];
-
-					A = (BGRA & 0xFF000000) >> 24;
-
-					pDst[7] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																AlphaBlendTable[pDst[7]][(255-A)]);
-				}
-
-				for (size_t x = uSubPicUnrolledWidth; x < uSubPicWidth; x++)
-				{
-					BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y + x * 4; // 4 bytes per pixel
-					BYTE* __restrict pDst = pData + dstWidth * (iDstOffsetY + y) + x + iDstOffsetX;
-
-					unsigned int* pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
-
-					unsigned int BGRA = pBGRAData[0];
-
-					short A = (BGRA & 0xFF000000) >> 24;
-
-					pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
-																AlphaBlendTable[pDst[0]][(255-A)]);
-				}
-			});
-
-			// Blend UV plane
-			Concurrency::parallel_for(0U, uUVPlaneHeight, [&](size_t y)
-			//for (size_t y = 0; y < uUVPlaneHeight; y++)
-			{
-				for (size_t x = 0; x < uUVPlaneWidth; x++)
-				{
-					BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y * 2 + x * 8; // 2 pixels @ 4 bytes per pixel 
-					BYTE* __restrict pDst = pUVPlane + dstWidth * (iDstOffsetYUV + y) + (x+iDstOffsetXUV) *2 ;
-
-					unsigned int* pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
-
-					// Get 2x2 pixel block
-					unsigned int BGRA1 = pBGRAData[0];
-					unsigned int BGRA2 = pBGRAData[1];
-					unsigned int BGRA3 = pBGRAData[uSubPicBGRAStride];
-					unsigned int BGRA4 = pBGRAData[uSubPicBGRAStride + 1];
-
-					short A1 = (BGRA1 & 0xFF000000) >> 24;
-					short A2 = (BGRA2 & 0xFF000000) >> 24;
-					short A3 = (BGRA3 & 0xFF000000) >> 24;
-					short A4 = (BGRA4 & 0xFF000000) >> 24;
-
-					short U1 = ConvertBGRAToUBT601(BGRA1);
-					short U2 = ConvertBGRAToUBT601(BGRA2);
-					short U3 = ConvertBGRAToUBT601(BGRA3);
-					short U4 = ConvertBGRAToUBT601(BGRA4);
-
-					short V1 = ConvertBGRAToVBT601(BGRA1);
-					short V2 = ConvertBGRAToVBT601(BGRA2);
-					short V3 = ConvertBGRAToVBT601(BGRA3);
-					short V4 = ConvertBGRAToVBT601(BGRA4);
-
-					// Average results. We bias alpha to the greatest value so we don't lose
-					// opacity due to averaging.
-					short finalA = max_nb(A1, max_nb(A2, max_nb(A3,A4)));
-					short finalU = (U1 + U2 + U3 + U4) >> 2;
-					short finalV = (V1 + V2 + V3 + V4) >> 2;
-
-					// Blend results
-					short dstU = (finalU + (((pDst[0]-128) * (255 - finalA)) >> 8)) + 128;
-					short dstV = (finalV + (((pDst[1]-128) * (255 - finalA)) >> 8)) + 128;
-					
-					pDst[0] = static_cast<BYTE>(min_nb<short>(dstU, 255));
-					pDst[1] = static_cast<BYTE>(min_nb<short>(dstV, 255));
-				}
-			});
-		}
+	class BlendBGRAWithYV12BT601 : public SubPicBlender
+	{
+		virtual void operator()(SubtitleCore::SubtitlePicture* subpic, BYTE* pData,
+			size_t dstWidth, size_t dstHeight);
 	};
 
 	// Keeping this around as backup

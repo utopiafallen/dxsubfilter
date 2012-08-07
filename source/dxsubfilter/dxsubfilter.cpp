@@ -192,6 +192,13 @@ HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin
 
 					AssignSubPicBlender();
 
+					// Load subtitle renderer
+					BITMAPINFOHEADER& bmiIn = reinterpret_cast<VIDEOINFOHEADER2*>(m_InputVideoType.pbFormat)->bmiHeader;
+					SubtitleCore::VideoInfo vidInfo;
+					vidInfo.Height = bmiIn.biHeight;
+					vidInfo.Width = bmiIn.biWidth;
+					m_pInputSubtitlePin->LoadSubtitleRenderer(vidInfo);
+
 					return S_OK;
 				}
 				else
@@ -221,6 +228,13 @@ HRESULT CDXSubFilter::CompleteConnect(PIN_DIRECTION direction, IPin* pReceivePin
 			m_uAlignedBufferLength = m_InputVideoType.lSampleSize;
 
 			AssignSubPicBlender();
+
+			// Load subtitle renderer
+			BITMAPINFOHEADER& bmiIn = reinterpret_cast<VIDEOINFOHEADER2*>(m_InputVideoType.pbFormat)->bmiHeader;
+			SubtitleCore::VideoInfo vidInfo;
+			vidInfo.Height = bmiIn.biHeight;
+			vidInfo.Width = bmiIn.biWidth;
+			m_pInputSubtitlePin->LoadSubtitleRenderer(vidInfo);
 
 			return S_OK;
 		}
@@ -492,7 +506,7 @@ HRESULT CDXSubFilter::Transform(IMediaSample * pIn, IMediaSample *pOut)
 //------------------------------------------------------------------------------
 // These are all the non-DirectShow related functions
 
-REFERENCE_TIME CDXSubFilter::CalcCurrentTime(REFERENCE_TIME rtOffset) const
+inline REFERENCE_TIME CDXSubFilter::CalcCurrentTime(REFERENCE_TIME rtOffset) const
 {
 	return m_rtStart + rtOffset;
 }
@@ -759,12 +773,6 @@ void CDXSubFilter::ComputeStrides()
 			// Should never reach here
 		}
 	}
-
-	// Update SubtitleRendererFactory with new video info
-	SubtitleCore::VideoInfo vidInfo;
-	vidInfo.Height = bmiIn.biHeight;
-	vidInfo.Width = bmiIn.biWidth;
-	SubtitleCore::SubtitleRendererFactory::GetSingleton()->SetVideoInfo(vidInfo);
 }
 
 void CDXSubFilter::CorrectVideoMediaType(CMediaType* pMediaType) const
@@ -836,6 +844,10 @@ void CDXSubFilter::AssignSubPicBlender()
 	if (m_InputVideoType.subtype == MEDIASUBTYPE_NV12)
 	{
 		m_pSubPicBlender = std::make_shared<BlendBGRAWithNV12BT601>();
+	}
+	else if (m_InputVideoType.subtype == MEDIASUBTYPE_YV12)
+	{
+		m_pSubPicBlender = std::make_shared<BlendBGRAWithYV12BT601>();
 	}
 	else
 	{

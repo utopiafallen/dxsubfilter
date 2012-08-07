@@ -103,7 +103,6 @@ namespace DXSubFilter
 		virtual CBasePin* GetPin(int n);
 
 	protected: // Data
-		friend class CSubtitleInputPin;
 
 		// We use m_pInput inherited from CTransformFilter for our video input so we use a second
 		// pin to accept text subtitle data.

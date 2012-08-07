@@ -70,10 +70,20 @@ namespace DXSubFilter
 		// IsExternalSubtitlesLoaded() to check if this succeeded.
 		void LoadExternalSubtitles();
 
+		// Called by the parent filter once it's appropriate to load a subtitle renderer. If
+		// external subtitles were loaded, they will be parsed at this point.
+		void LoadSubtitleRenderer(SubtitleCore::VideoInfo& targetVideoInfo);
+
 		bool IsExternalSubtitlesLoaded() const { return m_bExternalSubtitlesLoaded; }
 
+	public: // Data
+
+		// Corresponding subtitle renderer based on our current subtitle type. Made public for
+		// convenience since this pin isn't actually responsible for initiating rendering of
+		// subpics.
+		std::shared_ptr<SubtitleCore::ISubtitleRenderer> m_SubtitleRenderer;
+
 	protected: // Data
-		friend class CDXSubFilter;
 
 		// Flagged to true if we loaded external subtitles
 		bool m_bExternalSubtitlesLoaded;
@@ -83,9 +93,6 @@ namespace DXSubFilter
 
 		// Set to the current subtitle type that we're rendering
 		SubtitleCore::SubtitleType m_CurrentSubtitleType;
-
-		// Corresponding subtitle renderer based on our current subtitle type
-		std::shared_ptr<SubtitleCore::ISubtitleRenderer> m_SubtitleRenderer;
 
 	protected: // Functions
 

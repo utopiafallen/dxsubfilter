@@ -40,21 +40,18 @@ namespace SubtitleCore
 		// subtitle renderer. Otherwise, this will be a pointer to A CACHED RESULT. Users must
 		// be aware of this behaviour in multithreaded environments.
 		//
+		// targetVideoFrameInfo describes the video frame that subtitles will be rendered into.
+		//
 		// Returns a nullptr if it was unable to create a subtitle renderer. This may be due to
 		// unsupported type passed in or because the factory has not been initialized with all the
-		// necessary data. User must call SetSubtitleCoreConfig and SetVideoInfo with the valid
-		// data before making calls to this function.
-		std::shared_ptr<ISubtitleRenderer> CreateSubtitleRenderer(SubtitleType type, bool bUniqueInstance = false);
+		// necessary data. User must call SetSubtitleCoreConfig with valid data before making calls to this function.
+		std::shared_ptr<ISubtitleRenderer> CreateSubtitleRenderer(SubtitleType type, VideoInfo& targetVideoFrameInfo);
 
-		// Sets SubtitleCore configuration data. Must be called along with SetVideoInfo before
-		// CreateSubtitleRenderer will return valid results. Calls to this will invalidate and
-		// clear the cache so any previously created SubtitleRenderers should no longer be used.
+		// Sets SubtitleCore configuration data. Must be called before CreateSubtitleRenderer 
+		// will return valid results. Calls to this will invalidate and clear the cache so any
+		// previously created SubtitleRenderers should no longer be used.
 		void SetSubtitleCoreConfig(SubtitleCoreConfigurationData& config);
 
-		// Sets the video info of the video frame that subtitles will be rendered into. Calls to 
-		// this will invalidate and clear the cache so any previously created SubtitleRenderers 
-		// should no longer be used.
-		void SetVideoInfo(VideoInfo& vidInfo);
 	private: // Functions
 		SubtitleRendererFactory();
 		SubtitleRendererFactory(const SubtitleRendererFactory&);
@@ -68,7 +65,6 @@ namespace SubtitleCore
 		std::vector<std::vector<std::shared_ptr<ISubtitleRenderer>>> m_SubtitleRendererCache;
 
 		std::shared_ptr<SubtitleCoreConfigurationData> m_SubCoreConfig;
-		std::shared_ptr<VideoInfo> m_VideoInfo;
 
 		// Shared amongst all renderers.
 		IDWriteFactory* m_DWriteFactory;

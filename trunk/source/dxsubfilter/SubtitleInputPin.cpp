@@ -29,7 +29,7 @@ HRESULT CSubtitleInputPin::CheckMediaType(const CMediaType* mtIn)
 	// Check the input type. We reject if it's anything other than subtitle data.
 	// We also reject if external subtitles have been loaded to prevent upstream from
 	// connecting to us.
-    HRESULT hr = S_FALSE;
+	HRESULT hr = S_FALSE;
 
 	if (m_bExternalSubtitlesLoaded == false)
 	{
@@ -39,32 +39,18 @@ HRESULT CSubtitleInputPin::CheckMediaType(const CMediaType* mtIn)
 			hr = S_OK;
 		}
 	}
-	else
-	{
-		// It should be safe at this point to create a subtitle renderer because the video
-		// stream is connected to the transform filter first (we assume...). We also don't
-		// have to worry about format changes with external subtitles so as long as
-		// m_SubtitleRenderer is not null, we don't have to do anything.
-		if (!m_SubtitleRenderer)
-		{
-			m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::GetSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
-			m_SubtitleRenderer->Invalidate();
-			m_SubtitleRenderer->ParseScript(m_ExternalSubtitleScript);
-		}
-	}
-
-    return hr;
+	return hr;
 }
 
 HRESULT CSubtitleInputPin::SetMediaType(const CMediaType* mtIn)
 {
-    // Set the base class media type (should always succeed)
-    HRESULT hr = CBasePin::SetMediaType(mtIn);
-    if (FAILED(hr)) {
-        return hr;
-    }
+	// Set the base class media type (should always succeed)
+	HRESULT hr = CBasePin::SetMediaType(mtIn);
+	if (FAILED(hr)) {
+		return hr;
+	}
 
-    return m_pTransformFilter->SetMediaType(PINDIR_INPUT,mtIn);
+	return m_pTransformFilter->SetMediaType(PINDIR_INPUT,mtIn);
 }
 
 STDMETHODIMP CSubtitleInputPin::Disconnect()
@@ -76,10 +62,6 @@ STDMETHODIMP CSubtitleInputPin::Disconnect()
 HRESULT CSubtitleInputPin::CompleteConnect(IPin *pReceivePin)
 {
 	m_CurrentSubtitleType = MapMediaTypeToSubtitleType(m_mt);
-
-	// At this point, the video stream should have already connected and CDXSubFilter should have
-	// already setup the factory with all the necessary data so we don't check for null return.
-	m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::GetSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType);
 	
 	return CTransformInputPin::CompleteConnect(pReceivePin);
 }
@@ -177,6 +159,17 @@ STDMETHODIMP CSubtitleInputPin::Receive(IMediaSample* pSample)
 //------------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
+// CSubtitleInputPin functions
+void CSubtitleInputPin::LoadSubtitleRenderer(SubtitleCore::VideoInfo& targetVideoInfo)
+{
+	m_SubtitleRenderer = SubtitleCore::SubtitleRendererFactory::GetSingleton()->CreateSubtitleRenderer(m_CurrentSubtitleType, targetVideoInfo);
+
+	if (m_bExternalSubtitlesLoaded)
+	{
+		m_SubtitleRenderer->ParseScript(m_ExternalSubtitleScript);
+	}
+}
+
 void CSubtitleInputPin::LoadExternalSubtitles()
 {
 	IFileSourceFilter* pFileSource = nullptr;

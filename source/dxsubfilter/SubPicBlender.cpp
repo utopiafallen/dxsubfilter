@@ -68,3 +68,319 @@ SubPicBlender::SubPicBlender()
 		}
 	}
 }
+
+void BlendBGRAWithNV12BT601::operator()(SubtitleCore::SubtitlePicture* subpic, BYTE* pData,
+			size_t dstWidth, size_t dstHeight)
+{
+	BYTE* pSubPicData = subpic->m_Data.get();
+	BYTE* pUVPlane = pData + dstWidth * dstHeight; // NV12 has UV data packed into the same plane
+
+	size_t uSubPicStride = subpic->m_uStride;
+	size_t uSubPicWidth = subpic->m_uWidth;
+	size_t uSubPicHeight = subpic->m_uHeight;
+	size_t uSubPicBGRAStride = uSubPicStride / 4;
+
+	int iDstOffsetX = subpic->m_iOriginX;
+	int iDstOffsetY = subpic->m_iOriginY;
+
+	// 4:2:0 downsampling
+	size_t uUVPlaneHeight = (uSubPicHeight-1) / 2;
+	size_t uUVPlaneWidth = (uSubPicWidth-1) / 2;
+
+	int iDstOffsetXUV = iDstOffsetX / 2;
+	int iDstOffsetYUV = iDstOffsetY / 2;
+
+	// In case dimensions are not divisible by our unrolled processing size
+	size_t uSubPicUnrolledWidth = (uSubPicWidth / 8) * 8;
+
+	// Blend Y plane
+	Concurrency::parallel_for(0U, uSubPicHeight, [&](size_t y)
+	//for (size_t y = 0; y < uSubPicHeight; y++)
+	{
+		for (size_t x = 0; x < uSubPicUnrolledWidth; x+=8)
+		{
+			BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y + x * 4; // 4 bytes per pixel
+			BYTE* __restrict pDst = pData + dstWidth * (iDstOffsetY + y) + x + iDstOffsetX;
+
+			unsigned int* __restrict pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
+
+			// Pixel 1
+			unsigned int BGRA = pBGRAData[0];
+
+			short A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[0]][(255-A)]);
+
+			// Pixel 2
+			BGRA = pBGRAData[1];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[1] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[1]][(255-A)]);
+
+			// Pixel 3
+			BGRA = pBGRAData[2];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[2] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[2]][(255-A)]);
+
+			// Pixel 4
+			BGRA = pBGRAData[3];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[3] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[3]][(255-A)]);
+
+			// Pixel 5
+			BGRA = pBGRAData[4];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[4] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[4]][(255-A)]);
+
+			// Pixel 6
+			BGRA = pBGRAData[5];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[5] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[5]][(255-A)]);
+
+			// Pixel 7
+			BGRA = pBGRAData[6];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[6] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[6]][(255-A)]);
+
+			// Pixel 8
+			BGRA = pBGRAData[7];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[7] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[7]][(255-A)]);
+		}
+
+		for (size_t x = uSubPicUnrolledWidth; x < uSubPicWidth; x++)
+		{
+			BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y + x * 4; // 4 bytes per pixel
+			BYTE* __restrict pDst = pData + dstWidth * (iDstOffsetY + y) + x + iDstOffsetX;
+
+			unsigned int* pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
+
+			unsigned int BGRA = pBGRAData[0];
+
+			short A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[0]][(255-A)]);
+		}
+	});
+
+	// Blend UV plane
+	Concurrency::parallel_for(0U, uUVPlaneHeight, [&](size_t y)
+	//for (size_t y = 0; y < uUVPlaneHeight; y++)
+	{
+		for (size_t x = 0; x < uUVPlaneWidth; x++)
+		{
+			BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y * 2 + x * 8; // 2 pixels @ 4 bytes per pixel 
+			BYTE* __restrict pDst = pUVPlane + dstWidth * (iDstOffsetYUV + y) + (x+iDstOffsetXUV) *2 ;
+
+			unsigned int* pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
+
+			// Get left 2 pixels. MPEG-2 only samples the left values
+			unsigned int BGRA1 = pBGRAData[0];
+			unsigned int BGRA2 = pBGRAData[uSubPicBGRAStride];
+
+			short A1 = (BGRA1 & 0xFF000000) >> 24;
+			short A2 = (BGRA2 & 0xFF000000) >> 24;
+
+			short U1 = ConvertBGRAToUBT601(BGRA1);
+			short U2 = ConvertBGRAToUBT601(BGRA2);
+
+			short V1 = ConvertBGRAToVBT601(BGRA1);
+			short V2 = ConvertBGRAToVBT601(BGRA2);
+
+			// Average results.
+			short finalA = (A1 + A2) >> 1;
+			short finalU = (U1 + U2) >> 1;
+			short finalV = (V1 + V2) >> 1;
+
+			// Blend results. The biasing is due to the biasing applied by MPEG2 standards
+			// so that UV values are always positive.
+			short dstU = (finalU + (((pDst[0]-128) * (255 - finalA)) >> 8)) + 128;
+			short dstV = (finalV + (((pDst[1]-128) * (255 - finalA)) >> 8)) + 128;
+					
+			pDst[0] = static_cast<BYTE>(min_nb<short>(dstU, 255));
+			pDst[1] = static_cast<BYTE>(min_nb<short>(dstV, 255));
+		}
+	});
+}
+
+void BlendBGRAWithYV12BT601::operator()(SubtitleCore::SubtitlePicture* subpic, BYTE* pData,
+			size_t dstWidth, size_t dstHeight)
+{
+	BYTE* pSubPicData = subpic->m_Data.get();
+	BYTE* pVPlane = pData + dstWidth * dstHeight; // YV12 has U and V on separate planes
+	BYTE* pUPlane = pVPlane + (dstWidth * dstHeight) / 4;
+
+	size_t uUVStride = dstWidth / 2;
+
+	size_t uSubPicStride = subpic->m_uStride;
+	size_t uSubPicWidth = subpic->m_uWidth;
+	size_t uSubPicHeight = subpic->m_uHeight;
+	size_t uSubPicBGRAStride = uSubPicStride / 4;
+
+	int iDstOffsetX = subpic->m_iOriginX;
+	int iDstOffsetY = subpic->m_iOriginY;
+
+	// 4:2:0 downsampling
+	size_t uUVPlaneHeight = (uSubPicHeight-1) / 2;
+	size_t uUVPlaneWidth = (uSubPicWidth-1) / 2;
+
+	int iDstOffsetXUV = iDstOffsetX / 2;
+	int iDstOffsetYUV = iDstOffsetY / 2;
+
+	// In case dimensions are not divisible by our unrolled processing size
+	size_t uSubPicUnrolledWidth = (uSubPicWidth / 8) * 8;
+
+	// Blend Y plane
+	Concurrency::parallel_for(0U, uSubPicHeight, [&](size_t y)
+	//for (size_t y = 0; y < uSubPicHeight; y++)
+	{
+		for (size_t x = 0; x < uSubPicUnrolledWidth; x+=8)
+		{
+			BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y + x * 4; // 4 bytes per pixel
+			BYTE* __restrict pDst = pData + dstWidth * (iDstOffsetY + y) + x + iDstOffsetX;
+
+			unsigned int* __restrict pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
+
+			// Pixel 1
+			unsigned int BGRA = pBGRAData[0];
+
+			short A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[0]][(255-A)]);
+
+			// Pixel 2
+			BGRA = pBGRAData[1];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[1] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[1]][(255-A)]);
+
+			// Pixel 3
+			BGRA = pBGRAData[2];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[2] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[2]][(255-A)]);
+
+			// Pixel 4
+			BGRA = pBGRAData[3];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[3] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[3]][(255-A)]);
+
+			// Pixel 5
+			BGRA = pBGRAData[4];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[4] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[4]][(255-A)]);
+
+			// Pixel 6
+			BGRA = pBGRAData[5];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[5] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[5]][(255-A)]);
+
+			// Pixel 7
+			BGRA = pBGRAData[6];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[6] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[6]][(255-A)]);
+
+			// Pixel 8
+			BGRA = pBGRAData[7];
+
+			A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[7] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[7]][(255-A)]);
+		}
+
+		for (size_t x = uSubPicUnrolledWidth; x < uSubPicWidth; x++)
+		{
+			BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y + x * 4; // 4 bytes per pixel
+			BYTE* __restrict pDst = pData + dstWidth * (iDstOffsetY + y) + x + iDstOffsetX;
+
+			unsigned int* pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
+
+			unsigned int BGRA = pBGRAData[0];
+
+			short A = (BGRA & 0xFF000000) >> 24;
+
+			pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
+														AlphaBlendTable[pDst[0]][(255-A)]);
+		}
+	});
+
+	// Blend UV plane
+	Concurrency::parallel_for(0U, uUVPlaneHeight, [&](size_t y)
+	//for (size_t y = 0; y < uUVPlaneHeight; y++)
+	{
+		for (size_t x = 0; x < uUVPlaneWidth; x++)
+		{
+			BYTE* __restrict pSrc = pSubPicData + uSubPicStride * y * 2 + x * 8; // 2 pixels @ 4 bytes per pixel 
+			BYTE* __restrict pDstU = pUPlane + uUVStride * (iDstOffsetYUV + y) + (x+iDstOffsetXUV);
+			BYTE* __restrict pDstV = pVPlane + uUVStride * (iDstOffsetYUV + y) + (x+iDstOffsetXUV);
+
+			unsigned int* pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
+
+			// Get left 2 pixels. MPEG-2 only samples the left values
+			unsigned int BGRA1 = pBGRAData[0];
+			unsigned int BGRA2 = pBGRAData[uSubPicBGRAStride];
+
+			short A1 = (BGRA1 & 0xFF000000) >> 24;
+			short A2 = (BGRA2 & 0xFF000000) >> 24;
+
+			short U1 = ConvertBGRAToUBT601(BGRA1);
+			short U2 = ConvertBGRAToUBT601(BGRA2);
+
+			short V1 = ConvertBGRAToVBT601(BGRA1);
+			short V2 = ConvertBGRAToVBT601(BGRA2);
+
+			// Average results.
+			short finalA = (A1 + A2) >> 1;
+			short finalU = (U1 + U2) >> 1;
+			short finalV = (V1 + V2) >> 1;
+
+			// Blend results. The biasing is due to the biasing applied by MPEG2 standards
+			// so that UV values are always positive.
+			short dstU = (finalU + (((*pDstU-128) * (255 - finalA)) >> 8)) + 128;
+			short dstV = (finalV + (((*pDstV-128) * (255 - finalA)) >> 8)) + 128;
+					
+			*pDstU = static_cast<BYTE>(min_nb<short>(dstU, 255));
+			*pDstV = static_cast<BYTE>(min_nb<short>(dstV, 255));
+		}
+	});
+}

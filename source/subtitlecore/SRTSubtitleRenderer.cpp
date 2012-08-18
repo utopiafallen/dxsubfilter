@@ -341,47 +341,46 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 {
 	if (m_SubtitleTimeSpans.size() > 0)
 	{
-		// Check to see if rtNow falls within previously created list of valid time spans
-		bool bStillWithinSpans = false;
+		// Clear stale entries
+		tTimeSpanSet staleEntries;
 		for (auto it = m_ValidSubtitleTimes.begin(), itEnd = m_ValidSubtitleTimes.end(); it != itEnd; ++it)
 		{
-			if (it->first <= rtNow && it->second >= rtNow)
+			if (it->second < rtNow)
 			{
-				bStillWithinSpans = true;
+				staleEntries.insert(*it);
+			}
+		}
+		for (auto it = staleEntries.begin(), itEnd = staleEntries.end(); it != itEnd; ++it)
+		{
+			m_ValidSubtitleTimes.erase(*it);
+		}
+
+		// Create a timespan from current time so we can search for valid subtitles
+		auto searchValue = std::make_pair(rtNow - 100, rtNow + 100);
+
+		// Find first time span greater than current time
+		auto result = m_SubtitleTimeSpans.upper_bound(searchValue);
+
+		// Search backwards to find the timespans that encompasses current time. Since we use a
+		// set, we don't have to worry about duplicate entries.
+		auto start = --result;
+		for (;start != m_SubtitleTimeSpans.begin(); --start)
+		{
+			if (start->first <= rtNow && start->second >= rtNow)
+			{
+				m_ValidSubtitleTimes.insert(*start);
+			}
+			else
+			{
 				break;
 			}
 		}
-
-		if (!bStillWithinSpans)
-		{
-			m_ValidSubtitleTimes.clear();
-
-			// Get closest subtitle time spans
-			auto searchValue = std::make_pair(rtNow - 100, rtNow + 100);
-
-			// Find first time span greater than current time
-			auto result = m_SubtitleTimeSpans.upper_bound(searchValue);
-
-			// Search backwards to find the timespans that encompasses current time
-			auto start = --result;
-			for (;start != m_SubtitleTimeSpans.begin(); --start)
-			{
-				if (start->first <= rtNow && start->second >= rtNow)
-				{
-					m_ValidSubtitleTimes.insert(*start);
-				}
-				else
-				{
-					break;
-				}
-			}
 	
-			// Need to specifically check begin since we skip it
-			if (m_SubtitleTimeSpans.begin()->first <= rtNow &&
-				m_SubtitleTimeSpans.begin()->second >= rtNow)
-			{
-				m_ValidSubtitleTimes.insert(*m_SubtitleTimeSpans.begin());
-			}
+		// Need to specifically check begin since we skip it
+		if (m_SubtitleTimeSpans.begin()->first <= rtNow &&
+			m_SubtitleTimeSpans.begin()->second >= rtNow)
+		{
+			m_ValidSubtitleTimes.insert(*m_SubtitleTimeSpans.begin());
 		}
 	}
 
@@ -396,7 +395,11 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 
 void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePicture** ppOutSubPics)
 {
-	// Check already rendered results and store them into output
+	D2D_POINT_2F origin;
+	origin.x = static_cast<float>(m_SubCoreConfig.m_LineMarginLeft);
+	origin.y = static_cast<float>(m_SubCoreConfig.m_LineMarginTop);
+
+	// Check already rendered results and store them into output. 
 	size_t renderedIndex = 0;
 	std::vector<RenderedSubtitles*> renderedSubsToRemove;
 	std::vector<std::pair<REFERENCE_TIME, REFERENCE_TIME>> subtitleSpansAlreadyRendered;
@@ -407,12 +410,14 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 		{
 			ppOutSubPics[renderedIndex++] = &renderedIt->SubPic;
 
+			// Offset origin to account for cached results.
+			origin.y += static_cast<float>(renderedIt->SubPic.m_uHeight) * m_fSubtitlePlacementDirection;
+
 			subtitleSpansAlreadyRendered.push_back(renderedSpan);
 			m_ValidSubtitleTimes.erase(renderedSpan);
 		}
 		else
 		{
-			m_ValidSubtitleTimes.erase(renderedSpan);
 			renderedSubsToRemove.push_back(&(*renderedIt));
 		}
 	}
@@ -434,11 +439,6 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 		{
 			m_pRT->Clear();
 
-			D2D_POINT_2F origin;
-
-			origin.x = static_cast<float>(m_SubCoreConfig.m_LineMarginLeft);
-			origin.y = static_cast<float>(m_SubCoreConfig.m_LineMarginTop);
-
 			// Process time spans
 			RenderedSubtitles rsub;
 			for(auto it = m_ValidSubtitleTimes.begin(), itEnd = m_ValidSubtitleTimes.end(); it != itEnd; ++it)
@@ -449,6 +449,8 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 				{
 					rsub.StartTime = subIt->StartTime;
 					rsub.EndTime = subIt->EndTime;
+
+					// Render the actual subtitle
 					rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin);
 
 					m_RenderedSubtitles.push_back(rsub);
@@ -472,7 +474,7 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 	}
 
 
-	IWICBitmapEncoder *pEncoder = NULL;
+	/*IWICBitmapEncoder *pEncoder = NULL;
 	IWICBitmapFrameEncode *pFrameEncode = NULL;
 	IWICStream *pStream = NULL;
 	if (SUCCEEDED(hr))
@@ -523,7 +525,7 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 	}
 	SafeRelease(&pStream);
 	SafeRelease(&pEncoder);
-	SafeRelease(&pFrameEncode);
+	SafeRelease(&pFrameEncode);*/
 }
 
 bool SRTSubtitleRenderer::CheckLineIsTimestamp(const std::wstring& line)

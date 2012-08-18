@@ -21,10 +21,9 @@ namespace SubtitleCore
 		int m_iOriginX;
 		int m_iOriginY;
 
-		// Width and height of the image in pixels. It is guaranteed that the
+		// Width and height of the image in pixels.
 		size_t m_uWidth;
 		size_t m_uHeight;
-
 
 		// Stride m_Data. Measured in bytes.
 		size_t m_uStride;

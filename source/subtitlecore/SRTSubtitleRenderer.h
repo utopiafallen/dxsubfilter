@@ -56,6 +56,8 @@ namespace SubtitleCore
 		virtual void GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePicture** ppOutSubPics);
 
 	private: // Data
+		typedef std::set<std::pair<REFERENCE_TIME, REFERENCE_TIME>> tTimeSpanSet;
+
 		SubtitleCoreConfigurationData m_SubCoreConfig;
 		VideoInfo m_VideoInfo;
 
@@ -87,12 +89,12 @@ namespace SubtitleCore
 		// Parsed subtitle info, keyed on subtitle start time.
 		std::unordered_map<REFERENCE_TIME, std::vector<SRTSubtitleEntry>> m_SubtitleMap;
 
-		std::set<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_SubtitleTimeSpans;
+		tTimeSpanSet m_SubtitleTimeSpans;
 
 		// Valid time spans that encompass the most recently requested playback time
-		std::set<std::pair<REFERENCE_TIME, REFERENCE_TIME>> m_ValidSubtitleTimes;
+		tTimeSpanSet m_ValidSubtitleTimes;
 
-		// Rendered subtitles
+		// Rendered subtitles. Used to cache subtitles to prevent redrawing them unnecessarily.
 		struct RenderedSubtitles
 		{
 			SubtitlePicture SubPic;

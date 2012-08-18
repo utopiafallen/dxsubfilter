@@ -214,7 +214,7 @@ void BlendBGRAWithNV12BT601::operator()(SubtitleCore::SubtitlePicture* subpic, B
 			short finalU = (U1 + U2) >> 1;
 			short finalV = (V1 + V2) >> 1;
 
-			// Blend results. The biasing is due to the biasing applied by MPEG2 standards
+			// Blend results. The unbiasing/rebiasing is due to the biasing applied by MPEG2 standards
 			// so that UV values are always positive.
 			short dstU = (finalU + (((pDst[0]-128) * (255 - finalA)) >> 8)) + 128;
 			short dstV = (finalV + (((pDst[1]-128) * (255 - finalA)) >> 8)) + 128;
@@ -374,7 +374,7 @@ void BlendBGRAWithYV12BT601::operator()(SubtitleCore::SubtitlePicture* subpic, B
 			short finalU = (U1 + U2) >> 1;
 			short finalV = (V1 + V2) >> 1;
 
-			// Blend results. The biasing is due to the biasing applied by MPEG2 standards
+			// Blend results. The unbiasing/rebiasing is due to the biasing applied by MPEG2 standards
 			// so that UV values are always positive.
 			short dstU = (finalU + (((*pDstU-128) * (255 - finalA)) >> 8)) + 128;
 			short dstV = (finalV + (((*pDstV-128) * (255 - finalA)) >> 8)) + 128;

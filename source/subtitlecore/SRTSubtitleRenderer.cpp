@@ -2,6 +2,9 @@
 #include "SRTSubtitleRenderer.h"
 #include "SRTSubtitleEntry.h"
 
+#include "CustomDrawingEffects.h"
+#include "CustomTextRenderer.h"
+
 #include "Conversions.h"
 #include "DirectXHelpers.h"
 
@@ -24,6 +27,7 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 	, m_pWICFactory(nullptr)
 	, m_pOutlineColorBrush(nullptr)
 	, m_pShadowColorBrush(nullptr)
+	, m_pCustomTextRenderer(nullptr)
 {
 	m_SubtitleType = SBT_SRT;
 
@@ -121,10 +125,17 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 		hr = m_pRT->CreateSolidColorBrush(ConvertABGRToD2DCOLORF(m_SubCoreConfig.m_FontShadowColor),
 											&m_pShadowColorBrush);
 	}
+
+	if (SUCCEEDED(hr))
+	{
+		m_pCustomTextRenderer = new CustomTextRenderer(m_pD2DFactory, m_pRT);
+		m_pCustomTextRenderer->AddRef();
+	}
 }
 
 SRTSubtitleRenderer::~SRTSubtitleRenderer()
 {
+	SafeRelease(&m_pCustomTextRenderer);
 	SafeRelease(&m_pShadowColorBrush);
 	SafeRelease(&m_pOutlineColorBrush);
 	SafeRelease(&m_pSolidColorBrush);
@@ -435,6 +446,9 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 	{
 		size_t newSubIndex = renderedIndex;
 
+		DrawingContext context;
+		context.m_pFillBrush = m_pSolidColorBrush;
+
 		m_pRT->BeginDraw();
 		{
 			m_pRT->Clear();
@@ -451,7 +465,7 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 					rsub.EndTime = subIt->EndTime;
 
 					// Render the actual subtitle
-					rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin);
+					rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin, context);
 
 					m_RenderedSubtitles.push_back(rsub);
 					ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
@@ -589,7 +603,7 @@ void SRTSubtitleRenderer::ComputeTimestamp(const std::wstring& line, REFERENCE_T
 }
 
 
-SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& entry, D2D_POINT_2F& origin)
+SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& entry, D2D_POINT_2F& origin, DrawingContext& context)
 {
 	HRESULT hr;
 	UNREFERENCED_PARAMETER(hr); // hr is only used for debugging purposes
@@ -620,7 +634,9 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 	pTextLayout->GetOverhangMetrics(&overhang);
 
 	// Draw fill
-	m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
+	//m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
+	//UNREFERENCED_PARAMETER(context);
+	hr = pTextLayout->Draw(&context, m_pCustomTextRenderer, origin.x, origin.y);
 
 	SafeRelease(&pTextLayout);
 

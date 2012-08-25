@@ -17,7 +17,91 @@ namespace SubtitleCore
 	//	accompanying renderer, and update the create in DrawingEffectRendererFactory.
 	class CustomTextRenderer : public IDWriteTextRenderer
 	{
+	public:
+		CustomTextRenderer(ID2D1Factory* pD2DFactory, ID2D1RenderTarget* pRT);
+		virtual ~CustomTextRenderer();
 
+		//===================================================
+		// IDWritePixelSnapping implementations
+		//===================================================
+		STDMETHOD(IsPixelSnappingDisabled)(
+			__maybenull void* clientDrawingContext,
+			__out BOOL* isDisabled
+			);
+
+		STDMETHOD(GetCurrentTransform)(
+			__maybenull void* clientDrawingContext,
+			__out DWRITE_MATRIX* transform
+			);
+
+		STDMETHOD(GetPixelsPerDip)(
+			__maybenull void* clientDrawingContext,
+			__out FLOAT* pixelsPerDip
+			);
+
+		//===================================================
+		// IDWriteTextRenderer implementations
+		//===================================================
+		// Drawing context must not be null for the draw functions.
+		STDMETHOD(DrawGlyphRun)(
+			void* clientDrawingContext,
+			FLOAT baselineOriginX,
+			FLOAT baselineOriginY,
+			DWRITE_MEASURING_MODE measuringMode,
+			__in DWRITE_GLYPH_RUN const* glyphRun,
+			__in DWRITE_GLYPH_RUN_DESCRIPTION const* glyphRunDescription,
+			IUnknown* clientDrawingEffect
+			);
+
+		STDMETHOD(DrawUnderline)(
+			void* clientDrawingContext,
+			FLOAT baselineOriginX,
+			FLOAT baselineOriginY,
+			__in DWRITE_UNDERLINE const* underline,
+			IUnknown* clientDrawingEffect
+			);
+
+		STDMETHOD(DrawStrikethrough)(
+			void* clientDrawingContext,
+			FLOAT baselineOriginX,
+			FLOAT baselineOriginY,
+			__in DWRITE_STRIKETHROUGH const* strikethrough,
+			IUnknown* clientDrawingEffect
+			);
+
+		// This is not implemented. Do not use.
+		STDMETHOD(DrawInlineObject)(
+			void* clientDrawingContext,
+			FLOAT originX,
+			FLOAT originY,
+			IDWriteInlineObject* inlineObject,
+			BOOL isSideways,
+			BOOL isRightToLeft,
+			IUnknown* clientDrawingEffect
+			);
+
+		//===================================================
+		// IUnknown implementations
+		//===================================================
+		unsigned long STDMETHODCALLTYPE AddRef();
+		unsigned long STDMETHODCALLTYPE Release();
+		HRESULT STDMETHODCALLTYPE QueryInterface(
+			IID const& riid,
+			void** ppvObject
+			);
+
+	private:
+		unsigned long m_uRefCount;
+		ID2D1Factory* m_pD2DFactory;
+		ID2D1RenderTarget* m_pRT;
+
+		CustomTextRenderer(const CustomTextRenderer&);
+		CustomTextRenderer& operator= (const CustomTextRenderer&);
+	};
+
+	struct DrawingContext
+	{
+		ID2D1SolidColorBrush* m_pFillBrush;
 	};
 };
 

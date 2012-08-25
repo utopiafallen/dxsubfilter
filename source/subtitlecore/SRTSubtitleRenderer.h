@@ -11,6 +11,10 @@
 
 namespace SubtitleCore
 {
+	// Forward declarations
+	class CustomTextRenderer;
+	struct DrawingContext;
+
 	// SRTSubtitleRenderer
 	//	Class to handle rendering SRT subtitles. Because no official format specification exists
 	//	for SRT and different players support different features added into SRT (most notably by
@@ -75,6 +79,8 @@ namespace SubtitleCore
 		ID2D1SolidColorBrush* m_pOutlineColorBrush;
 		ID2D1SolidColorBrush* m_pShadowColorBrush;
 
+		CustomTextRenderer* m_pCustomTextRenderer;
+
 		float m_fDPIScaleX;
 		float m_fDPIScaleY;
 
@@ -122,7 +128,7 @@ namespace SubtitleCore
 		// BeginDraw() and EndDraw(). origin will be modified to contain the origin that this 
 		// subtitle drew itself it. Data in each subpic has not been filled out; call
 		// FillSubtitlePictureData once the drawing operations are done to fill out the data.
-		SubtitlePicture RenderSRTSubtitleEntry(SRTSubtitleEntry& entry, D2D_POINT_2F& origin);
+		SubtitlePicture RenderSRTSubtitleEntry(SRTSubtitleEntry& entry, D2D_POINT_2F& origin, DrawingContext& context);
 
 		void FillSubtitlePictureData(SubtitlePicture& subpic);
 	};

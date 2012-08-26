@@ -102,5 +102,8 @@
     <ClCompile Include="DrawingEffectRendererFactory.cpp">
       <Filter>Source Files\CustomTextRenderer\DrawingEffectRenderers</Filter>
     </ClCompile>
+    <ClCompile Include="OutlineDrawingEffectRenderer.cpp">
+      <Filter>Source Files\CustomTextRenderer\DrawingEffectRenderers</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

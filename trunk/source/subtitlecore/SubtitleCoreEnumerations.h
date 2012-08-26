@@ -44,16 +44,20 @@ namespace SubtitleCore
 		unsigned int m_FontSecondaryFillColor;
 		unsigned int m_FontOutlineColor;
 		unsigned int m_FontShadowColor;
-		unsigned int m_FontBorderWidth;
 		unsigned int m_FontShadowDepth;
 		unsigned int m_FontSize;
+
+		// We store both versions of border width because D2D uses float values while we need unsigned int.
+		unsigned int m_uFontBorderWidth;
+		float m_fFontBorderWidth;
+
 		std::wstring m_FontName;
 		std::wstring m_SystemLocale;	// Should we support this? How does this affect us?
 		DWRITE_FONT_WEIGHT m_FontWeight;
 		DWRITE_FONT_STYLE m_FontStyle;
 		DWRITE_FONT_STRETCH m_FontStretch;
 
-		//Font code page, script support TBD.
+		// Font code page, script support TBD.
 
 		// Number of subtitles to buffer for rendering ahead of video playback
 		unsigned int m_SubtitleBufferSize;
@@ -63,11 +67,12 @@ namespace SubtitleCore
 			, m_LineMarginRight(20), m_LineMarginTop(20), m_LineMarginBottom(20)
 			, m_FontPrimaryFillColor(0xFFFFFFFF), m_FontSecondaryFillColor(0xFFFFFFFF)
 			, m_FontOutlineColor(0xFF000000), m_FontShadowColor(0x80000000)
-			, m_FontBorderWidth(3), m_FontShadowDepth(3)
+			, m_fFontBorderWidth(3.0f), m_uFontBorderWidth(3)
+			, m_FontShadowDepth(3)
 			, m_FontSize(18)
 			, m_SystemLocale(L"en-us")
 			, m_FontName(L"Tahoma")
-			, m_FontWeight(DWRITE_FONT_WEIGHT_BOLD)
+			, m_FontWeight(DWRITE_FONT_WEIGHT_NORMAL)
 			, m_FontStyle(DWRITE_FONT_STYLE_NORMAL)
 			, m_FontStretch(DWRITE_FONT_STRETCH_NORMAL)
 			, m_SubtitleBufferSize(0)

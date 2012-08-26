@@ -3,9 +3,22 @@
 #include "SRTSubtitleRenderer.h"
 #include "NoSubtitleRenderer.h"
 
+#include "DrawingEffectRendererFactory.h"
+
 using namespace SubtitleCore;
 
 SubtitleRendererFactory* SubtitleRendererFactory::instance = 0;
+
+void SubtitleRendererFactory::InitializeSingleton()
+{
+	if (!instance)
+	{
+		instance = new SubtitleRendererFactory();
+
+		// Also initialize DrawingEffectRenderer factory.
+		DrawingEffectsRendererFactory::InitializeSingleton();
+	}
+}
 
 SubtitleRendererFactory::SubtitleRendererFactory() 
 	: m_SubCoreConfig(nullptr)
@@ -20,11 +33,10 @@ SubtitleRendererFactory::SubtitleRendererFactory()
 SubtitleRendererFactory::~SubtitleRendererFactory()
 {
 	m_SubCoreConfig.reset();
-	m_SubtitleRendererCache.clear();
 	m_DWriteFactory->Release();
 }
 
-void SubtitleRendererFactory::SetSubtitleCoreConfig(SubtitleCoreConfigurationData& config)
+void SubtitleRendererFactory::SetSubtitleCoreConfig(const SubtitleCoreConfigurationData& config)
 {
 	Concurrency::reader_writer_lock::scoped_lock scoped_lock(m_RWLockFactory);
 
@@ -32,7 +44,7 @@ void SubtitleRendererFactory::SetSubtitleCoreConfig(SubtitleCoreConfigurationDat
 	m_SubCoreConfig = std::make_shared<SubtitleCoreConfigurationData>(config);
 }
 
-std::shared_ptr<ISubtitleRenderer> SubtitleRendererFactory::CreateSubtitleRenderer(SubtitleType type, VideoInfo& targetVideoFrameInfo)
+std::shared_ptr<ISubtitleRenderer> SubtitleRendererFactory::CreateSubtitleRenderer(SubtitleType type, const VideoInfo& targetVideoFrameInfo) const
 {
 	// If the user hasn't passed us all the data we need, return nullptr.
 	if (m_SubCoreConfig)

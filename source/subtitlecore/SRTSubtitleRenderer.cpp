@@ -13,7 +13,7 @@ using namespace SubtitleCore;
 static const float fSpacer = 7.0f;
 static const size_t uDIPPadding = 4;
 
-SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, VideoInfo& vidInfo, IDWriteFactory* dwFactory)
+SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, const VideoInfo& vidInfo, IDWriteFactory* dwFactory)
 	: m_SubCoreConfig(config)
 	, m_VideoInfo(vidInfo)
 	, m_fHorizontalMargin(static_cast<float>(config.m_LineMarginLeft + config.m_LineMarginRight))
@@ -28,6 +28,7 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 	, m_pOutlineColorBrush(nullptr)
 	, m_pShadowColorBrush(nullptr)
 	, m_pCustomTextRenderer(nullptr)
+	, m_pGlobalDrawingEffects(nullptr)
 {
 	m_SubtitleType = SBT_SRT;
 
@@ -43,8 +44,8 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 
 	float fDpiX, fDpiY;
 	m_pD2DFactory->GetDesktopDpi(&fDpiX, &fDpiY);
-	m_fDPIScaleX = fDpiX / 96.0f;
-	m_fDPIScaleY = fDpiY / 96.0f;
+	m_fDPIScaleX = fDpiX * (1.0f / 96.0f);
+	m_fDPIScaleY = fDpiY * (1.0f / 96.0f);
 
 	if (SUCCEEDED(hr))
 	{
@@ -130,11 +131,23 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 	{
 		m_pCustomTextRenderer = new CustomTextRenderer(m_pD2DFactory, m_pRT);
 		m_pCustomTextRenderer->AddRef();
+
+		if (m_SubCoreConfig.m_uFontBorderWidth > 0U)
+		{
+			m_pGlobalDrawingEffects = new DrawingEffectsCollection();
+			m_pGlobalDrawingEffects->AddRef();
+
+			m_pGlobalDrawingEffects->m_Effects.push_back(
+				std::make_shared<OutlineAndFillDrawingEffect>(m_pSolidColorBrush, m_pOutlineColorBrush, 
+				SCU::ConvertPixelsToDIP(m_SubCoreConfig.m_uFontBorderWidth, m_fDPIScaleX))
+			);
+		}
 	}
 }
 
 SRTSubtitleRenderer::~SRTSubtitleRenderer()
 {
+	SafeRelease(&m_pGlobalDrawingEffects);
 	SafeRelease(&m_pCustomTextRenderer);
 	SafeRelease(&m_pShadowColorBrush);
 	SafeRelease(&m_pOutlineColorBrush);
@@ -446,6 +459,7 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 	{
 		size_t newSubIndex = renderedIndex;
 
+		// Build DrawingContext and any global drawing effects
 		DrawingContext context;
 		context.m_pFillBrush = m_pSolidColorBrush;
 
@@ -465,7 +479,7 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 					rsub.EndTime = subIt->EndTime;
 
 					// Render the actual subtitle
-					rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin, context);
+					rsub.SubPic = RenderSRTSubtitleEntry(*subIt, origin, context, m_pGlobalDrawingEffects);
 
 					m_RenderedSubtitles.push_back(rsub);
 					ppOutSubPics[newSubIndex++] = &(m_RenderedSubtitles.back().SubPic);
@@ -603,7 +617,8 @@ void SRTSubtitleRenderer::ComputeTimestamp(const std::wstring& line, REFERENCE_T
 }
 
 
-SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& entry, D2D_POINT_2F& origin, DrawingContext& context)
+SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& entry, D2D_POINT_2F& origin, DrawingContext& context,
+															DrawingEffectsCollection* effects)
 {
 	HRESULT hr;
 	UNREFERENCED_PARAMETER(hr); // hr is only used for debugging purposes
@@ -627,28 +642,37 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 		pTextLayout->SetStrikethrough(formatIt->Strikethrough, formatIt->Range);
 	}
 
+	// Apply global drawing effects
+	DWRITE_TEXT_RANGE everythingRange;
+	everythingRange.length = entry.Text.length();
+	everythingRange.startPosition = 0;
+	pTextLayout->SetDrawingEffect(effects, everythingRange);
+
 	DWRITE_TEXT_METRICS metrics;
 	pTextLayout->GetMetrics(&metrics);
 
 	DWRITE_OVERHANG_METRICS overhang;
 	pTextLayout->GetOverhangMetrics(&overhang);
 
-	// Draw fill
+	// Draw text
 	//m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
 	//UNREFERENCED_PARAMETER(context);
 	hr = pTextLayout->Draw(&context, m_pCustomTextRenderer, origin.x, origin.y);
+
+	// Need to manually release because SetDrawingEffect will AddRef()
+	SafeRelease(&effects);
 
 	SafeRelease(&pTextLayout);
 
 	int originX, originY;
 	size_t width, height;
-	originX = static_cast<int>(metrics.left + origin.x);
-	originY = static_cast<int>(metrics.top + origin.y);
-	width = SCU::ConvertDIPToPixels(metrics.width + (overhang.right - overhang.left), m_fDPIScaleX) + uDIPPadding;
-	height = SCU::ConvertDIPToPixels(metrics.height, m_fDPIScaleY) + uDIPPadding;
+	originX = static_cast<int>(metrics.left + origin.x - m_SubCoreConfig.m_fFontBorderWidth);
+	originY = static_cast<int>(metrics.top + origin.y - m_SubCoreConfig.m_fFontBorderWidth);
+	width = SCU::ConvertDIPToPixels(metrics.width + (overhang.right - overhang.left), m_fDPIScaleX) + m_SubCoreConfig.m_uFontBorderWidth + uDIPPadding;
+	height = SCU::ConvertDIPToPixels(metrics.height, m_fDPIScaleY) + m_SubCoreConfig.m_uFontBorderWidth + uDIPPadding;
 
 	// Offset for the next subtitle to be draw after us
-	origin.y = origin.y + (metrics.height + fSpacer) * m_fSubtitlePlacementDirection;
+	origin.y = origin.y + (metrics.height + fSpacer + m_SubCoreConfig.m_fFontBorderWidth) * m_fSubtitlePlacementDirection;
 
 	return SubtitlePicture(originX, originY, width, height, width, SBPF_PBGRA32, nullptr);
 }

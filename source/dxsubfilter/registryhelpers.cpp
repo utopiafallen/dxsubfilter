@@ -127,7 +127,8 @@ namespace DXSubFilter
 			{
 				return false;
 			}
-			g_SubtitleCoreConfigData.m_FontBorderWidth = data;
+			g_SubtitleCoreConfigData.m_fFontBorderWidth = static_cast<float>(data);
+			g_SubtitleCoreConfigData.m_uFontBorderWidth = data;
 
 			lRegResult = RegGetValue(hDXSubFilterKey, NULL, REGVALUE_SUBTITLE_FONT_SHADOW_DEPTH_NAME, 
 				RRF_RT_DWORD, NULL, &data, &dataSize);
@@ -233,7 +234,7 @@ namespace DXSubFilter
 
 			lRegResult = RegSetValueEx(hDXSubFilterKey, REGVALUE_SUBTITLE_FONT_BORDER_WIDTH_NAME, NULL, 
 				REG_DWORD, 
-				reinterpret_cast<BYTE*>(&g_SubtitleCoreConfigData.m_FontBorderWidth), 
+				reinterpret_cast<BYTE*>(&g_SubtitleCoreConfigData.m_uFontBorderWidth), 
 				sizeof(unsigned int));
 
 			lRegResult = RegSetValueEx(hDXSubFilterKey, REGVALUE_SUBTITLE_FONT_SHADOW_DEPTH_NAME, NULL, 

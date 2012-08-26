@@ -126,6 +126,7 @@
     <ClCompile Include="CustomTextRenderer.cpp" />
     <ClCompile Include="DrawingEffectRendererFactory.cpp" />
     <ClCompile Include="NoSubtitleRenderer.cpp" />
+    <ClCompile Include="OutlineDrawingEffectRenderer.cpp" />
     <ClCompile Include="SRTSubtitleRenderer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

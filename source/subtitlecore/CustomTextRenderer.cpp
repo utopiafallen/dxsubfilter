@@ -3,6 +3,9 @@
 
 #include "CustomDrawingEffects.h"
 
+#include "ICustomDrawingEffectRenderer.h"
+#include "DrawingEffectRendererFactory.h"
+
 #include "DirectXHelpers.h"
 
 using namespace SubtitleCore;
@@ -170,24 +173,32 @@ STDMETHODIMP CustomTextRenderer::DrawStrikethrough(
 			);
 	}
 
-	// Client drawing effect
+	// Render client drawing effects
 	if (clientDrawingEffect)
 	{
 		DrawingEffectsCollection* pEffectsCollection = nullptr;
 		clientDrawingEffect->QueryInterface(&pEffectsCollection);
+
+		for (auto it = pEffectsCollection->m_Effects.begin(), itEnd = pEffectsCollection->m_Effects.end(); it != itEnd; ++it)
+		{
+			auto renderer = DrawingEffectsRendererFactory::GetSingleton()->CreateEffectRenderer(**it);
+			renderer->Render(m_pRT, pTransformedGeometry);
+		}
 	}
+	else
+	{
+		// Draw the outline of the rectangle
+		m_pRT->DrawGeometry(
+			pTransformedGeometry,
+			context->m_pFillBrush
+			);
 
-	// Draw the outline of the rectangle
-	m_pRT->DrawGeometry(
-		pTransformedGeometry,
-		context->m_pFillBrush
-		);
-
-	// Fill in the rectangle
-	m_pRT->FillGeometry(
-		pTransformedGeometry,
-		context->m_pFillBrush
-		);
+		// Fill in the rectangle
+		m_pRT->FillGeometry(
+			pTransformedGeometry,
+			context->m_pFillBrush
+			);
+	}
 
 	SafeRelease(&pRectangleGeometry);
 	SafeRelease(&pTransformedGeometry);
@@ -243,19 +254,27 @@ STDMETHODIMP CustomTextRenderer::DrawUnderline(
 	{
 		DrawingEffectsCollection* pEffectsCollection = nullptr;
 		clientDrawingEffect->QueryInterface(&pEffectsCollection);
+
+		for (auto it = pEffectsCollection->m_Effects.begin(), itEnd = pEffectsCollection->m_Effects.end(); it != itEnd; ++it)
+		{
+			auto renderer = DrawingEffectsRendererFactory::GetSingleton()->CreateEffectRenderer(**it);
+			renderer->Render(m_pRT, pTransformedGeometry);
+		}
 	}
+	else
+	{
+		// Draw the outline of the rectangle
+		m_pRT->DrawGeometry(
+			pTransformedGeometry,
+			context->m_pFillBrush
+			);
 
-	// Draw the outline of the rectangle
-	m_pRT->DrawGeometry(
-		pTransformedGeometry,
-		context->m_pFillBrush
-		);
-
-	// Fill in the rectangle
-	m_pRT->FillGeometry(
-		pTransformedGeometry,
-		context->m_pFillBrush
-		);
+		// Fill in the rectangle
+		m_pRT->FillGeometry(
+			pTransformedGeometry,
+			context->m_pFillBrush
+			);
+	}
 
 	SafeRelease(&pRectangleGeometry);
 	SafeRelease(&pTransformedGeometry);
@@ -341,21 +360,29 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 	{
 		DrawingEffectsCollection* pEffectsCollection = nullptr;
 		clientDrawingEffect->QueryInterface(&pEffectsCollection);
+
+		for (auto it = pEffectsCollection->m_Effects.begin(), itEnd = pEffectsCollection->m_Effects.end(); it != itEnd; ++it)
+		{
+			auto renderer = DrawingEffectsRendererFactory::GetSingleton()->CreateEffectRenderer(**it);
+			renderer->Render(m_pRT, pTransformedGeometry);
+		}
 	}
-
-	if (SUCCEEDED(hr))
+	else
 	{
-		// Draw the outline of the glyph run
-		m_pRT->DrawGeometry(
-			pTransformedGeometry,
-			context->m_pFillBrush
-			);
+		if (SUCCEEDED(hr))
+		{
+			// Draw the outline of the glyph run
+			m_pRT->DrawGeometry(
+				pTransformedGeometry,
+				context->m_pFillBrush
+				);
 
-		// Fill in the glyph run
-		m_pRT->FillGeometry(
-			pTransformedGeometry,
-			context->m_pFillBrush
-			);
+			// Fill in the glyph run
+			m_pRT->FillGeometry(
+				pTransformedGeometry,
+				context->m_pFillBrush
+				);
+		}
 	}
 
 	SafeRelease(&pPathGeometry);

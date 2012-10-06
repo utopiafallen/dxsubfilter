@@ -82,6 +82,9 @@
     <ClInclude Include="DrawingEffectRendererFactory.h">
       <Filter>Source Files\CustomTextRenderer\DrawingEffectRenderers</Filter>
     </ClInclude>
+    <ClInclude Include="SCSimplifiedGeometrySink.h">
+      <Filter>Source Files\CustomTextRenderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -104,6 +107,9 @@
     </ClCompile>
     <ClCompile Include="OutlineDrawingEffectRenderer.cpp">
       <Filter>Source Files\CustomTextRenderer\DrawingEffectRenderers</Filter>
+    </ClCompile>
+    <ClCompile Include="SCSimplifiedGeometrySink.cpp">
+      <Filter>Source Files\CustomTextRenderer</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

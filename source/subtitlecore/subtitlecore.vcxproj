@@ -114,6 +114,7 @@
     <ClInclude Include="ISubtitleRenderer.h" />
     <ClInclude Include="NoSubtitleRenderer.h" />
     <ClInclude Include="OutlineDrawingEffectRenderer.h" />
+    <ClInclude Include="SCSimplifiedGeometrySink.h" />
     <ClInclude Include="SRTSubtitleEntry.h" />
     <ClInclude Include="SRTSubtitleRenderer.h" />
     <ClInclude Include="stdafx.h" />
@@ -127,6 +128,7 @@
     <ClCompile Include="DrawingEffectRendererFactory.cpp" />
     <ClCompile Include="NoSubtitleRenderer.cpp" />
     <ClCompile Include="OutlineDrawingEffectRenderer.cpp" />
+    <ClCompile Include="SCSimplifiedGeometrySink.cpp" />
     <ClCompile Include="SRTSubtitleRenderer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -98,11 +98,6 @@ namespace SubtitleCore
 		CustomTextRenderer(const CustomTextRenderer&);
 		CustomTextRenderer& operator= (const CustomTextRenderer&);
 	};
-
-	struct DrawingContext
-	{
-		ID2D1SolidColorBrush* m_pFillBrush;
-	};
 };
 
 #endif

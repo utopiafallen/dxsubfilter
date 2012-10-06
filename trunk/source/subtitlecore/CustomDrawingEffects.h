@@ -14,6 +14,7 @@ namespace SubtitleCore
 	class ICustomDrawingEffect
 	{
 	public:
+		// Every drawing effect that implements this interface must update this enum.
 		enum DrawingEffectType { DET_OUTLINEFILL, DET_OUTLINEONLY };
 
 		DrawingEffectType GetType() const { return m_EffectType; }
@@ -85,6 +86,13 @@ namespace SubtitleCore
 	//////////////////////////////////////////////////////////////////////////////////////////////////
 	//										Drawing effects											//
 	//////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// Drawing context required by D2D. Can be used to supply default global drawing effects if a
+	// text layout has not custom drawing effects.
+	struct DrawingContext
+	{
+		ID2D1SolidColorBrush* m_pFillBrush;
+	};
 
 	struct OutlineAndFillDrawingEffect : public ICustomDrawingEffect
 	{

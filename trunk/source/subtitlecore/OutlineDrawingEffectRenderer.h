@@ -19,7 +19,7 @@ namespace SubtitleCore
 			: m_pEffect(effect) 
 		{}
 
-		virtual void Render(ID2D1RenderTarget* pRT, ID2D1TransformedGeometry* pTransformedGeometry);
+		virtual void Render(ID2D1RenderTarget* pRT, ID2D1TransformedGeometry* pTransformedGeometry, SCSimplifiedGeometrySink* pSimplifiedGeo = nullptr);
 
 	private:
 		const OutlineAndFillDrawingEffect* m_pEffect;
@@ -34,7 +34,7 @@ namespace SubtitleCore
 			: m_pEffect(effect)
 		{}
 
-		virtual void Render(ID2D1RenderTarget* pRT, ID2D1TransformedGeometry* pTransformedGeometry);
+		virtual void Render(ID2D1RenderTarget* pRT, ID2D1TransformedGeometry* pTransformedGeometry, SCSimplifiedGeometrySink* pSimplifiedGeo = nullptr);
 
 	private:
 		const OutlineOnlyDrawingEffect* m_pEffect;

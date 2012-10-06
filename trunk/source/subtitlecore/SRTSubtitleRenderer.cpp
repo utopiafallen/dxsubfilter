@@ -502,58 +502,58 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 	}
 
 
-	/*IWICBitmapEncoder *pEncoder = NULL;
-	IWICBitmapFrameEncode *pFrameEncode = NULL;
-	IWICStream *pStream = NULL;
-	if (SUCCEEDED(hr))
-	{
-		hr = m_pWICFactory->CreateStream(&pStream);
-	}
-	WICPixelFormatGUID format = GUID_WICPixelFormatDontCare;
-	if (SUCCEEDED(hr))
-	{
-		static const WCHAR filename[] = L"C:\\Users\\Xin Liu\\Desktop\\output.png";
-		hr = pStream->InitializeFromFilename(filename, GENERIC_WRITE);
-	}
-	if (SUCCEEDED(hr))
-	{
-		hr = m_pWICFactory->CreateEncoder(GUID_ContainerFormatPng, NULL, &pEncoder);
-	}
-	if (SUCCEEDED(hr))
-	{
-		hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
-	}
-	if (SUCCEEDED(hr))
-	{
-		hr = pEncoder->CreateNewFrame(&pFrameEncode, NULL);
-	}
-	if (SUCCEEDED(hr))
-	{
-		hr = pFrameEncode->Initialize(NULL);
-	}
-	if (SUCCEEDED(hr))
-	{
-		hr = pFrameEncode->SetSize(m_VideoInfo.Width, m_VideoInfo.Height);
-	}
-	if (SUCCEEDED(hr))
-	{
-		hr = pFrameEncode->SetPixelFormat(&format);
-	}
-	if (SUCCEEDED(hr))
-	{
-		hr = pFrameEncode->WriteSource(m_pWICBitmap, NULL);
-	}
-	if (SUCCEEDED(hr))
-	{
-		hr = pFrameEncode->Commit();
-	}
-	if (SUCCEEDED(hr))
-	{
-		hr = pEncoder->Commit();
-	}
-	SafeRelease(&pStream);
-	SafeRelease(&pEncoder);
-	SafeRelease(&pFrameEncode);*/
+	//IWICBitmapEncoder *pEncoder = NULL;
+	//IWICBitmapFrameEncode *pFrameEncode = NULL;
+	//IWICStream *pStream = NULL;
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = m_pWICFactory->CreateStream(&pStream);
+	//}
+	//WICPixelFormatGUID format = GUID_WICPixelFormatDontCare;
+	//if (SUCCEEDED(hr))
+	//{
+	//	static const WCHAR filename[] = L"C:\\Users\\Xin Liu\\Desktop\\output.png";
+	//	hr = pStream->InitializeFromFilename(filename, GENERIC_WRITE);
+	//}
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = m_pWICFactory->CreateEncoder(GUID_ContainerFormatPng, NULL, &pEncoder);
+	//}
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = pEncoder->Initialize(pStream, WICBitmapEncoderNoCache);
+	//}
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = pEncoder->CreateNewFrame(&pFrameEncode, NULL);
+	//}
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = pFrameEncode->Initialize(NULL);
+	//}
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = pFrameEncode->SetSize(m_VideoInfo.Width, m_VideoInfo.Height);
+	//}
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = pFrameEncode->SetPixelFormat(&format);
+	//}
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = pFrameEncode->WriteSource(m_pWICBitmap, NULL);
+	//}
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = pFrameEncode->Commit();
+	//}
+	//if (SUCCEEDED(hr))
+	//{
+	//	hr = pEncoder->Commit();
+	//}
+	//SafeRelease(&pStream);
+	//SafeRelease(&pEncoder);
+	//SafeRelease(&pFrameEncode);
 }
 
 bool SRTSubtitleRenderer::CheckLineIsTimestamp(const std::wstring& line)
@@ -657,6 +657,7 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 	// Draw text
 	//m_pRT->DrawTextLayout(origin, pTextLayout, m_pSolidColorBrush);
 	//UNREFERENCED_PARAMETER(context);
+	//UNREFERENCED_PARAMETER(effects);
 	hr = pTextLayout->Draw(&context, m_pCustomTextRenderer, origin.x, origin.y);
 
 	// Need to manually release because SetDrawingEffect will AddRef()

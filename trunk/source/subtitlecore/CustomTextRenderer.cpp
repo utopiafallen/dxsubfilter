@@ -296,6 +296,7 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 
 	UNREFERENCED_PARAMETER(glyphRunDescription);
 	UNREFERENCED_PARAMETER(measuringMode);
+	UNREFERENCED_PARAMETER(hr);
 
 	DrawingContext* context = static_cast<DrawingContext*>(clientDrawingContext);
 	assert(context);
@@ -308,37 +309,33 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 
 	// Write to the path geometry using the geometry sink.
 	ID2D1GeometrySink* pSink = NULL;
-	if (SUCCEEDED(hr))
-	{
-		hr = pPathGeometry->Open(
-			&pSink
-			);
-	}
+	hr = pPathGeometry->Open(&pSink);
 
 	// Get the glyph run outline geometries back from DirectWrite and place them within the
 	// geometry sink.
-	if (SUCCEEDED(hr))
-	{
-		hr = glyphRun->fontFace->GetGlyphRunOutline(
-			glyphRun->fontEmSize,
-			glyphRun->glyphIndices,
-			glyphRun->glyphAdvances,
-			glyphRun->glyphOffsets,
-			glyphRun->glyphCount,
-			glyphRun->isSideways,
-			glyphRun->bidiLevel%2,
-			pSink
-			);
-	}
+	hr = glyphRun->fontFace->GetGlyphRunOutline(
+		glyphRun->fontEmSize,
+		glyphRun->glyphIndices,
+		glyphRun->glyphAdvances,
+		glyphRun->glyphOffsets,
+		glyphRun->glyphCount,
+		glyphRun->isSideways,
+		glyphRun->bidiLevel%2,
+		pSink
+		);
 
 	// Close the geometry sink
-	if (SUCCEEDED(hr))
-	{
-		hr = pSink->Close();
-	}
+	hr = pSink->Close();
+
+	// Simplify the geometry
+	ID2D1PathGeometry* pSimplifiedPathGeometry = nullptr;
+	hr = m_pD2DFactory->CreatePathGeometry(&pSimplifiedPathGeometry);
+	hr = pSimplifiedPathGeometry->Open(&pSink);
+	hr = pPathGeometry->Simplify(D2D1_GEOMETRY_SIMPLIFICATION_OPTION_LINES, NULL, pSink);
+	hr = pSink->Close();
 
 	// Initialize a matrix to translate the origin of the glyph run.
-	D2D1::Matrix3x2F const matrix = D2D1::Matrix3x2F(
+	D2D1::Matrix3x2F transform = D2D1::Matrix3x2F(
 		1.0f, 0.0f,
 		0.0f, 1.0f,
 		baselineOriginX, baselineOriginY
@@ -346,14 +343,11 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 
 	// Create the transformed geometry
 	ID2D1TransformedGeometry* pTransformedGeometry = NULL;
-	if (SUCCEEDED(hr))
-	{
-		hr = m_pD2DFactory->CreateTransformedGeometry(
-			pPathGeometry,
-			&matrix,
-			&pTransformedGeometry
-			);
-	}
+	hr = m_pD2DFactory->CreateTransformedGeometry(
+		pSimplifiedPathGeometry,
+		&transform,
+		&pTransformedGeometry
+		);
 
 	// Client drawing effect
 	if (clientDrawingEffect)
@@ -369,20 +363,17 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 	}
 	else
 	{
-		if (SUCCEEDED(hr))
-		{
-			// Draw the outline of the glyph run
-			m_pRT->DrawGeometry(
-				pTransformedGeometry,
-				context->m_pFillBrush
-				);
+		// Draw the outline of the glyph run
+		m_pRT->DrawGeometry(
+			pTransformedGeometry,
+			context->m_pFillBrush
+			);
 
-			// Fill in the glyph run
-			m_pRT->FillGeometry(
-				pTransformedGeometry,
-				context->m_pFillBrush
-				);
-		}
+		// Fill in the glyph run
+		m_pRT->FillGeometry(
+			pTransformedGeometry,
+			context->m_pFillBrush
+			);
 	}
 
 	SafeRelease(&pPathGeometry);

@@ -58,9 +58,6 @@
     <ClInclude Include="SRTSubtitleEntry.h">
       <Filter>Source Files\SRT</Filter>
     </ClInclude>
-    <ClInclude Include="Conversions.h">
-      <Filter>Source Files\Utilities</Filter>
-    </ClInclude>
     <ClInclude Include="DirectXHelpers.h">
       <Filter>Source Files\Utilities</Filter>
     </ClInclude>
@@ -84,6 +81,12 @@
     </ClInclude>
     <ClInclude Include="SCSimplifiedGeometrySink.h">
       <Filter>Source Files\CustomTextRenderer</Filter>
+    </ClInclude>
+    <ClInclude Include="SCUMath.h">
+      <Filter>Source Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="SCUConversions.h">
+      <Filter>Source Files\Utilities</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

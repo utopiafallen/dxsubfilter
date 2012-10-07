@@ -115,13 +115,14 @@
     <ClInclude Include="NoSubtitleRenderer.h" />
     <ClInclude Include="OutlineDrawingEffectRenderer.h" />
     <ClInclude Include="SCSimplifiedGeometrySink.h" />
+    <ClInclude Include="SCUMath.h" />
     <ClInclude Include="SRTSubtitleEntry.h" />
     <ClInclude Include="SRTSubtitleRenderer.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SubtitleCoreEnumerations.h" />
     <ClInclude Include="SubtitlePicture.h" />
     <ClInclude Include="SubtitleRendererFactory.h" />
-    <ClInclude Include="Conversions.h" />
+    <ClInclude Include="SCUConversions.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CustomTextRenderer.cpp" />

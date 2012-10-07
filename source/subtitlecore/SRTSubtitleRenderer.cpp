@@ -5,7 +5,7 @@
 #include "CustomDrawingEffects.h"
 #include "CustomTextRenderer.h"
 
-#include "Conversions.h"
+#include "SCUConversions.h"
 #include "DirectXHelpers.h"
 
 using namespace SubtitleCore;

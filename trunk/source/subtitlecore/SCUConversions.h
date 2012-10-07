@@ -1,4 +1,6 @@
 // Convenience function to convert between units
+#ifndef SCUCONVERSIONS_H
+#define SCUCONVERSIONS_H
 #pragma once
 #include "strmif.h"
 
@@ -14,3 +16,5 @@ namespace SCU
 				(milliseconds * 10000i64);
 	}
 };
+
+#endif

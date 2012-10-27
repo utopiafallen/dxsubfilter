@@ -16,8 +16,8 @@ static const size_t uDIPPadding = 4;
 SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, const VideoInfo& vidInfo, IDWriteFactory* dwFactory)
 	: m_SubCoreConfig(config)
 	, m_VideoInfo(vidInfo)
-	, m_fHorizontalMargin(static_cast<float>(config.m_LineMarginLeft + config.m_LineMarginRight))
-	, m_fVerticalMargin(static_cast<float>(config.m_LineMarginBottom + config.m_LineMarginTop))
+	, m_uHorizontalMargin(config.m_LineMarginLeft + config.m_LineMarginRight)
+	, m_uVerticalMargin(config.m_LineMarginBottom + config.m_LineMarginTop)
 	, m_pDWriteFactory(dwFactory)
 	, m_pDWTextFormat(nullptr)
 	, m_pD2DFactory(nullptr)
@@ -63,8 +63,8 @@ SRTSubtitleRenderer::SRTSubtitleRenderer(SubtitleCoreConfigurationData& config, 
 		D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
 				D2D1_RENDER_TARGET_TYPE_DEFAULT,
 				D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
-				96,
-				96);
+				fDpiX,
+				fDpiX);
 		hr = m_pD2DFactory->CreateWicBitmapRenderTarget(
 			m_pWICBitmap,
 			&props,
@@ -420,8 +420,8 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePicture** ppOutSubPics)
 {
 	D2D_POINT_2F origin;
-	origin.x = static_cast<float>(m_SubCoreConfig.m_LineMarginLeft);
-	origin.y = static_cast<float>(m_SubCoreConfig.m_LineMarginTop);
+	origin.x = SCU::ConvertPixelsToDIP(m_SubCoreConfig.m_LineMarginLeft, m_fDPIScaleX);
+	origin.y = SCU::ConvertPixelsToDIP(m_SubCoreConfig.m_LineMarginTop, m_fDPIScaleY);
 
 	// Check already rendered results and store them into output. 
 	size_t renderedIndex = 0;
@@ -623,15 +623,13 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 	HRESULT hr;
 	UNREFERENCED_PARAMETER(hr); // hr is only used for debugging purposes
 
-	std::vector<ID2D1PathGeometry*> pPathGeometries;
-
 	IDWriteTextLayout* pTextLayout = nullptr;
 
 	hr = m_pDWriteFactory->CreateTextLayout(entry.Text.c_str(), 
 									entry.Text.length(),
 									m_pDWTextFormat,
-									static_cast<float>(m_VideoInfo.Width) - m_fHorizontalMargin,
-									static_cast<float>(m_VideoInfo.Height) - m_fVerticalMargin,
+									SCU::ConvertPixelsToDIP(m_VideoInfo.Width - m_uHorizontalMargin, m_fDPIScaleX),
+									SCU::ConvertPixelsToDIP(m_VideoInfo.Height - m_uVerticalMargin , m_fDPIScaleY),
 									&pTextLayout);
 
 	for (auto formatIt = entry.SubTextFormat.begin(), itEnd = entry.SubTextFormat.end(); formatIt != itEnd; ++formatIt)
@@ -667,8 +665,8 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 
 	int originX, originY;
 	size_t width, height;
-	originX = static_cast<int>(metrics.left + origin.x - m_SubCoreConfig.m_fFontBorderWidth);
-	originY = static_cast<int>(metrics.top + origin.y - m_SubCoreConfig.m_fFontBorderWidth);
+	originX = static_cast<int>(SCU::ConvertDIPToPixels(metrics.left + origin.x, m_fDPIScaleX) - m_SubCoreConfig.m_fFontBorderWidth);
+	originY = static_cast<int>(SCU::ConvertDIPToPixels(metrics.top + origin.y, m_fDPIScaleY) - m_SubCoreConfig.m_fFontBorderWidth);
 	width = SCU::ConvertDIPToPixels(metrics.width + (overhang.right - overhang.left), m_fDPIScaleX) + m_SubCoreConfig.m_uFontBorderWidth + uDIPPadding;
 	height = SCU::ConvertDIPToPixels(metrics.height, m_fDPIScaleY) + m_SubCoreConfig.m_uFontBorderWidth + uDIPPadding;
 

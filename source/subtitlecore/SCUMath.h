@@ -5,14 +5,15 @@
 
 #include <xmmintrin.h>
 #include <emmintrin.h>
+#include <cfloat>
 
 // SCU - SubtitleCoreUtilities
 namespace SCU
 {
-	// Computes intersection point of two lines in 2D. This function does not handle special cases where
-	// the lines never interesect or the lines are colinear.
+	// Computes intersection point of the two infinite lines represented by the start and end points specified 
+	// in 2D. This function does not handle special cases where the lines never interesect or the lines are colinear.
 	// NB: For efficiency, the start and end points are grouped together into a 16-byte aligned array.
-	__forceinline void LineLineIntersectSSE2(float startPoints[4], float endPoints[4], float& outIntersectX, float& outIntersectY)
+	__forceinline void LineLineIntersectSSE2(float startPoints[], float endPoints[], float& outIntersectX, float& outIntersectY)
 	{
 		_MM_ALIGN16 float result[4];
 
@@ -44,8 +45,10 @@ namespace SCU
 	}
 
 	// CPU version of the above function for reference.
-	inline void LineLineIntersectCPU(float startPoints[4], float endPoints[4], float& outIntersectX, float& outIntersectY)
+	inline void LineLineIntersectCPU(float startPoints[], float endPoints[], float& outIntersectX, float& outIntersectY)
 	{
+		//http://en.wikipedia.org/wiki/Line_intersection
+
 		float p0x = startPoints[0];
 		float p0y = startPoints[1];
 		float p2x = startPoints[2];
@@ -65,6 +68,32 @@ namespace SCU
 
 		outIntersectX = (det1 * x3_sub_x4 - x1_sub_x2 * det2) * denom;
 		outIntersectY = (det1 * y3_sub_y4 - y1_sub_y2 * det2) * denom;
+	}
+
+	__forceinline float rsqrt_sse(float val)
+	{
+		float result;
+		__m128 rsqrt = _mm_load_ss(&val);
+		rsqrt = _mm_rsqrt_ss(rsqrt);
+		_mm_store_ss(&result, rsqrt);
+		return result;
+	}
+
+	// Computes the normalized normal of the line segment and puts the result in outNormal.
+	void ComputeLineNormal(float startPoint[2], float endPoint[2], float outNormal[2])
+	{
+		float denom = endPoint[0] - startPoint[2] + FLT_EPSILON;
+		float slope = (endPoint[1] - startPoint[1]) / denom; // Avoid division by 0
+
+		outNormal[0] = denom;
+		outNormal[1] = -1.0f / slope;
+
+		// Normalize
+		float lengthsqr = denom * denom + outNormal[1] * outNormal[1];
+		float rsqrtlengthsqr = rsqrt_sse(lengthsqr);	
+		float length = lengthsqr * rsqrtlengthsqr;
+		outNormal[0] /= length;
+		outNormal[1] /= length;
 	}
 };
 

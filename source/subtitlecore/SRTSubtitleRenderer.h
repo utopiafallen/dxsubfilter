@@ -91,8 +91,8 @@ namespace SubtitleCore
 		float m_fSubtitlePlacementDirection;
 
 		// Sum of left + right and top + bottom margins
-		float m_fHorizontalMargin;
-		float m_fVerticalMargin;
+		size_t m_uHorizontalMargin;
+		size_t m_uVerticalMargin;
 
 		// Parsed subtitle info, keyed on subtitle start time.
 		std::unordered_map<REFERENCE_TIME, std::vector<SRTSubtitleEntry>> m_SubtitleMap;

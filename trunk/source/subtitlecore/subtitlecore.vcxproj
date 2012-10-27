@@ -116,6 +116,7 @@
     <ClInclude Include="OutlineDrawingEffectRenderer.h" />
     <ClInclude Include="SCSimplifiedGeometrySink.h" />
     <ClInclude Include="SCUMath.h" />
+    <ClInclude Include="SCUMemory.h" />
     <ClInclude Include="SRTSubtitleEntry.h" />
     <ClInclude Include="SRTSubtitleRenderer.h" />
     <ClInclude Include="stdafx.h" />

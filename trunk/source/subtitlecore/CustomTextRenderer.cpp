@@ -64,6 +64,34 @@ STDMETHODIMP_(unsigned long) CustomTextRenderer::Release()
 	return newCount;
 }
 
+STDMETHODIMP CustomTextRenderer::QueryInterface(
+	IID const& riid,
+	void** ppvObject
+	)
+{
+	if (__uuidof(IDWriteTextRenderer) == riid)
+	{
+		*ppvObject = this;
+	}
+	else if (__uuidof(IDWritePixelSnapping) == riid)
+	{
+		*ppvObject = this;
+	}
+	else if (__uuidof(IUnknown) == riid)
+	{
+		*ppvObject = this;
+	}
+	else
+	{
+		*ppvObject = NULL;
+		return E_FAIL;
+	}
+
+	AddRef();
+
+	return S_OK;
+}
+
 STDMETHODIMP CustomTextRenderer::IsPixelSnappingDisabled(
 	__maybenull void* clientDrawingContext,
 	__out BOOL* isDisabled
@@ -98,34 +126,6 @@ STDMETHODIMP CustomTextRenderer::GetPixelsPerDip(
 
 	m_pRT->GetDpi(&x, &yUnused);
 	*pixelsPerDip = x * (1.0f/96.0f);
-
-	return S_OK;
-}
-
-STDMETHODIMP CustomTextRenderer::QueryInterface(
-	IID const& riid,
-	void** ppvObject
-	)
-{
-	if (__uuidof(IDWriteTextRenderer) == riid)
-	{
-		*ppvObject = this;
-	}
-	else if (__uuidof(IDWritePixelSnapping) == riid)
-	{
-		*ppvObject = this;
-	}
-	else if (__uuidof(IUnknown) == riid)
-	{
-		*ppvObject = this;
-	}
-	else
-	{
-		*ppvObject = NULL;
-		return E_FAIL;
-	}
-
-	AddRef();
 
 	return S_OK;
 }

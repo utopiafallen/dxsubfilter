@@ -4,7 +4,7 @@
 #pragma once
 
 #include "stdafx.h"
-#include "DirectXHelpers.h"
+#include "SCUDirectXHelpers.h"
 
 namespace SubtitleCore
 {

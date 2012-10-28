@@ -6,7 +6,7 @@
 #include "CustomTextRenderer.h"
 
 #include "SCUConversions.h"
-#include "DirectXHelpers.h"
+#include "SCUDirectXHelpers.h"
 
 using namespace SubtitleCore;
 
@@ -670,7 +670,10 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 	width = SCU::ConvertDIPToPixels(metrics.width + (overhang.right - overhang.left), m_fDPIScaleX) + m_SubCoreConfig.m_uFontBorderWidth + uDIPPadding;
 	height = SCU::ConvertDIPToPixels(metrics.height, m_fDPIScaleY) + m_SubCoreConfig.m_uFontBorderWidth + uDIPPadding;
 
-	// Offset for the next subtitle to be draw after us
+	SCU_ASSERT_MESSAGE(originX + width <= m_VideoInfo.Width, "Rendered SRT subtitle exceeds width of video frame.");
+	SCU_ASSERT_MESSAGE(originY + height <= m_VideoInfo.Height, "Rendered SRT subtitle exceeds height of video frame.");
+
+	// Offset for the next subtitle to be drawn after this one
 	origin.y = origin.y + (metrics.height + fSpacer + m_SubCoreConfig.m_fFontBorderWidth) * m_fSubtitlePlacementDirection;
 
 	return SubtitlePicture(originX, originY, width, height, width, SBPF_PBGRA32, nullptr);

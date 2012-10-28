@@ -82,8 +82,8 @@ namespace SCU
 	// Computes the normalized normal of the line segment and puts the result in outNormal.
 	void ComputeLineNormal(float startPoint[2], float endPoint[2], float outNormal[2])
 	{
-		float denom = endPoint[0] - startPoint[2] + FLT_EPSILON;
-		float slope = (endPoint[1] - startPoint[1]) / denom; // Avoid division by 0
+		float denom = endPoint[0] - startPoint[2] + FLT_EPSILON; // Avoid division by 0
+		float slope = (endPoint[1] - startPoint[1]) / denom; 
 
 		outNormal[0] = denom;
 		outNormal[1] = -1.0f / slope;

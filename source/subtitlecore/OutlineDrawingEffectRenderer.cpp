@@ -2,7 +2,7 @@
 #include "OutlineDrawingEffectRenderer.h"
 
 #include "CustomDrawingEffects.h"
-#include "DirectXHelpers.h"
+#include "SCUDirectXHelpers.h"
 
 using namespace SubtitleCore;
 

@@ -7,6 +7,12 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
+#include <windows.h>
+#include <cstdlib>
+#include <wchar.h>
+
+// Custom debug assert macro
+#include "SCUDbgAssert.h"
 
 // SSE intrinsics
 #include <emmintrin.h>
@@ -21,7 +27,6 @@
 
 // DirectWrite
 #include "DWrite.h"
-
 
 // Microsoft Concurrency Runtime
 #include <ppl.h>

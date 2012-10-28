@@ -7,6 +7,9 @@
 
 namespace SubtitleCore
 {
+	// Global typedefs that will probably be useful if the user is including this header.
+	typedef std::vector<D2D1_POINT_2F, SCU::aligned_allocator<D2D1_POINT_2F>> tAlignedVectorD2DPOINT2F;
+
 	// This class implements a specialized ID2D1SimplifiedGeometrySink that custom effects renderers can optionally
 	// use. The main purpose of this class is to provide a clean way to created widened outlines via scanline 
 	// rasterization. It is an error if non-line geometry is added to this sink as we have no implementation for 
@@ -60,9 +63,16 @@ namespace SubtitleCore
 	protected:
 		STATE m_CurrentState;
 
-		typedef std::vector<D2D1_POINT_2F, SCU::aligned_allocator<D2D1_POINT_2F>> tAlignedPointVector;
-		tAlignedPointVector m_LineStartPoints;
-		tAlignedPointVector m_LineEndPoints;
+		// Simple aggregation of data into figures. This will allow us to process figures concurrently in the future.
+		struct FigureData
+		{
+			tAlignedVectorD2DPOINT2F m_LineStartPoints;
+			tAlignedVectorD2DPOINT2F m_LineEndPoints;
+
+			FigureData();
+		};
+		std::vector<FigureData>	m_FigureData;
+		int						m_CurrentFigureIndex;
 
 	private:
 		UINT m_uRefCount;

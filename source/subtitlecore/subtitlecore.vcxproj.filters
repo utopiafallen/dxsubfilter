@@ -58,9 +58,6 @@
     <ClInclude Include="SRTSubtitleEntry.h">
       <Filter>Source Files\SRT</Filter>
     </ClInclude>
-    <ClInclude Include="DirectXHelpers.h">
-      <Filter>Source Files\Utilities</Filter>
-    </ClInclude>
     <ClInclude Include="NoSubtitleRenderer.h">
       <Filter>Source Files\NoSubtitles</Filter>
     </ClInclude>
@@ -91,6 +88,12 @@
     <ClInclude Include="SCUMemory.h">
       <Filter>Source Files\Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="SCUDirectXHelpers.h">
+      <Filter>Source Files\Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="SCUDbgAssert.h">
+      <Filter>Source Files\Utilities</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -116,6 +119,9 @@
     </ClCompile>
     <ClCompile Include="SCSimplifiedGeometrySink.cpp">
       <Filter>Source Files\CustomTextRenderer</Filter>
+    </ClCompile>
+    <ClCompile Include="SCUDbgAssert.cpp">
+      <Filter>Source Files\Utilities</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

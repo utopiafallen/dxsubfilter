@@ -108,7 +108,8 @@
   <ItemGroup>
     <ClInclude Include="CustomDrawingEffects.h" />
     <ClInclude Include="CustomTextRenderer.h" />
-    <ClInclude Include="DirectXHelpers.h" />
+    <ClInclude Include="SCUDbgAssert.h" />
+    <ClInclude Include="SCUDirectXHelpers.h" />
     <ClInclude Include="DrawingEffectRendererFactory.h" />
     <ClInclude Include="ICustomDrawingEffectRenderer.h" />
     <ClInclude Include="ISubtitleRenderer.h" />
@@ -127,6 +128,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CustomTextRenderer.cpp" />
+    <ClCompile Include="SCUDbgAssert.cpp" />
     <ClCompile Include="DrawingEffectRendererFactory.cpp" />
     <ClCompile Include="NoSubtitleRenderer.cpp" />
     <ClCompile Include="OutlineDrawingEffectRenderer.cpp" />

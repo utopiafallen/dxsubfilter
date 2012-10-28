@@ -6,7 +6,7 @@
 #include "ICustomDrawingEffectRenderer.h"
 #include "DrawingEffectRendererFactory.h"
 
-#include "DirectXHelpers.h"
+#include "SCUDirectXHelpers.h"
 
 using namespace SubtitleCore;
 

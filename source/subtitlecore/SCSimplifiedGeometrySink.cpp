@@ -9,11 +9,16 @@ namespace
 	static const UINT DEFAULT_PREALLOCATE_COUNT = 64;
 };
 
+SCSimplifiedGeometrySink::FigureData::FigureData()
+	: m_LineStartPoints(DEFAULT_PREALLOCATE_COUNT)
+	, m_LineEndPoints(DEFAULT_PREALLOCATE_COUNT)
+{
+}
+
 SCSimplifiedGeometrySink::SCSimplifiedGeometrySink()
 	: m_uRefCount(1)
 	, m_CurrentState(NONE)
-	, m_LineStartPoints(DEFAULT_PREALLOCATE_COUNT)
-	, m_LineEndPoints(DEFAULT_PREALLOCATE_COUNT)
+	, m_CurrentFigureIndex(-1)
 {
 }
 
@@ -75,8 +80,10 @@ STDMETHODIMP_(void) SCSimplifiedGeometrySink::BeginFigure(D2D1_POINT_2F startPoi
 	if (m_CurrentState != INVALID)
 	{
 		m_CurrentState = FIGURE_BEGUN;
-
-		m_LineStartPoints.push_back(startPoint);
+		
+		m_CurrentFigureIndex = m_FigureData.size();
+		m_FigureData.push_back(FigureData());
+		m_FigureData[m_CurrentFigureIndex].m_LineStartPoints.push_back(startPoint);
 	}
 }
 
@@ -92,12 +99,12 @@ STDMETHODIMP_(void) SCSimplifiedGeometrySink::AddLines(CONST D2D1_POINT_2F* poin
 {
 	if (m_CurrentState != INVALID && m_CurrentState == FIGURE_BEGUN)
 	{
-		// For efficiency with the SSE2, we end up duplicating begin and end points so that we have discrete
+		// For efficiency with SSE2, we end up duplicating begin and end points so that we have discrete
 		// line segments stored.
 		for (size_t i = 0; i < pointsCount; i++)
 		{
-			m_LineEndPoints.push_back(points[i]);
-			m_LineStartPoints.push_back(points[i]);
+			m_FigureData[m_CurrentFigureIndex].m_LineEndPoints.push_back(points[i]);
+			m_FigureData[m_CurrentFigureIndex].m_LineStartPoints.push_back(points[i]);
 		}
 	}
 	else
@@ -113,6 +120,8 @@ STDMETHODIMP_(void) SCSimplifiedGeometrySink::EndFigure(D2D1_FIGURE_END figureEn
 	if (m_CurrentState == FIGURE_BEGUN)
 	{
 		m_CurrentState = FIGURE_ENDED;
+
+		m_CurrentFigureIndex = -1;
 	}
 	else
 	{

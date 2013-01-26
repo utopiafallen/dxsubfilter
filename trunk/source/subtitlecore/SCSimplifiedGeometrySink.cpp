@@ -19,6 +19,7 @@ SCSimplifiedGeometrySink::SCSimplifiedGeometrySink()
 	: m_uRefCount(1)
 	, m_CurrentState(NONE)
 	, m_CurrentFigureIndex(-1)
+	, m_fStrokeWidth(1.0f)
 {
 }
 
@@ -117,6 +118,14 @@ STDMETHODIMP_(void) SCSimplifiedGeometrySink::EndFigure(D2D1_FIGURE_END figureEn
 {
 	UNREFERENCED_PARAMETER(figureEnd);
 
+#ifdef _DEBUG
+	// Validate our data is correct.
+	std::for_each(m_FigureData.begin(), m_FigureData.end(), [](const FigureData& data)
+	{
+		assert(data.m_LineEndPoints.size() == data.m_LineStartPoints.size());
+	});
+#endif
+
 	if (m_CurrentState == FIGURE_BEGUN)
 	{
 		m_CurrentState = FIGURE_ENDED;
@@ -140,5 +149,13 @@ STDMETHODIMP SCSimplifiedGeometrySink::Close()
 	{
 		m_CurrentState = NONE;
 		return E_FAIL;
+	}
+}
+
+void SCSimplifiedGeometrySink::WidenOutline(float stroke)
+{
+	if (std::fabsf(m_fStrokeWidth - stroke) > FLT_EPSILON)
+	{
+		m_fStrokeWidth = stroke;
 	}
 }

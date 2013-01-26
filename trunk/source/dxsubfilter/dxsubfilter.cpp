@@ -834,6 +834,7 @@ void CDXSubFilter::CorrectVideoMediaType(CMediaType* pMediaType) const
 	else
 	{
 		// Should never reach here
+		assert(false);
 	}
 
 	pMediaType->lSampleSize = bmiIn.biSizeImage;

@@ -21,7 +21,7 @@ namespace SubtitleCore
 	public:
 		// Constructor will increment ref-count so no need to explicitly call AddRef after construction.
 		SCSimplifiedGeometrySink();
-		virtual ~SCSimplifiedGeometrySink() { m_uRefCount = 0; }
+		virtual ~SCSimplifiedGeometrySink() { m_uRefCount = 0; m_fStrokeWidth = 1.0f; }
 
 		//===================================================
 		// ID2D1SimplifiedGeometrySink implementations
@@ -57,8 +57,12 @@ namespace SubtitleCore
 		// SCSimplifiedGeometrySink functions
 		//===================================================
 		// Widens the outline of the geometry by the specified stroke amount. This is an expensive process so avoid
-		// calling it more than necessary and cache its results whenever possible.
+		// calling it more than necessary and cache its results whenever possible. Multiple calls with the same
+		// stroke (within an epsilon) are guaranteed to be no-ops.
 		virtual void WidenOutline(float stroke);
+
+		// Returns the current stroke width.
+		float GetCurrentStroke() const { return m_fStrokeWidth; }
 
 	protected:
 		STATE m_CurrentState;
@@ -76,6 +80,7 @@ namespace SubtitleCore
 
 	private:
 		UINT m_uRefCount;
+		float m_fStrokeWidth;
 	};
 };
 

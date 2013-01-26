@@ -328,11 +328,11 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 	hr = pSink->Close();
 
 	// Simplify the geometry
-	ID2D1PathGeometry* pSimplifiedPathGeometry = nullptr;
-	hr = m_pD2DFactory->CreatePathGeometry(&pSimplifiedPathGeometry);
-	hr = pSimplifiedPathGeometry->Open(&pSink);
-	hr = pPathGeometry->Simplify(D2D1_GEOMETRY_SIMPLIFICATION_OPTION_LINES, NULL, pSink);
-	hr = pSink->Close();
+	//ID2D1PathGeometry* pSimplifiedPathGeometry = nullptr;
+	//hr = m_pD2DFactory->CreatePathGeometry(&pSimplifiedPathGeometry);
+	//hr = pSimplifiedPathGeometry->Open(&pSink);
+	//hr = pPathGeometry->Simplify(D2D1_GEOMETRY_SIMPLIFICATION_OPTION_LINES, NULL, pSink);
+	//hr = pSink->Close();
 
 	// Initialize a matrix to translate the origin of the glyph run.
 	D2D1::Matrix3x2F transform = D2D1::Matrix3x2F(
@@ -344,7 +344,7 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 	// Create the transformed geometry
 	ID2D1TransformedGeometry* pTransformedGeometry = NULL;
 	hr = m_pD2DFactory->CreateTransformedGeometry(
-		pSimplifiedPathGeometry,
+		pPathGeometry,//pSimplifiedPathGeometry,
 		&transform,
 		&pTransformedGeometry
 		);

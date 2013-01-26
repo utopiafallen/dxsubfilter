@@ -80,20 +80,41 @@ namespace SCU
 	}
 
 	// Computes the normalized normal of the line segment and puts the result in outNormal.
-	void ComputeLineNormal(float startPoint[2], float endPoint[2], float outNormal[2])
+	inline void ComputeLineNormal(float startPoint[], float endPoint[], float outNormal[])
 	{
-		float denom = endPoint[0] - startPoint[2] + FLT_EPSILON; // Avoid division by 0
-		float slope = (endPoint[1] - startPoint[1]) / denom; 
+		float dx = endPoint[0] - startPoint[0];
+		float dy = endPoint[1] - startPoint[1];
 
-		outNormal[0] = denom;
-		outNormal[1] = -1.0f / slope;
+		outNormal[0] = -dy;
+		outNormal[1] = dx;
 
 		// Normalize
-		float lengthsqr = denom * denom + outNormal[1] * outNormal[1];
-		float rsqrtlengthsqr = rsqrt_sse(lengthsqr);	
-		float length = lengthsqr * rsqrtlengthsqr;
-		outNormal[0] /= length;
-		outNormal[1] /= length;
+		float lengthsqr = dy * dy + dx * dx;
+		float invLength = rsqrt_sse(lengthsqr);
+		outNormal[0] *= invLength;
+		outNormal[1] *= invLength;
+	}
+
+	// Returns true if two lines will intersect
+	inline bool LinesIntersect(float startPoints[], float endPoints[])
+	{
+		float dx1 = endPoints[0] - startPoints[0];
+		float dy1 = endPoints[1] - startPoints[1];
+		float dx2 = endPoints[2] - startPoints[2];
+		float dy2 = endPoints[3] - startPoints[3];
+
+		// Normalize
+		float invLength1 = rsqrt_sse(dx1 * dx1 + dy1 * dy1);
+		float invLength2 = rsqrt_sse(dx2 * dx2 + dy2 * dy2);
+		dx1 *= invLength1;
+		dy1 *= invLength1;
+		dx2 *= invLength2;
+		dy2 *= invLength2;
+
+		// Lines will never interesect if the dot product of their rays is 1
+		float result = dx1 * dx2 + dy1 * dy2;
+
+		return (1.0f - result) <= FLT_EPSILON;
 	}
 };
 

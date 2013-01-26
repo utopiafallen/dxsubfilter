@@ -123,6 +123,7 @@ STDMETHODIMP_(void) SCSimplifiedGeometrySink::EndFigure(D2D1_FIGURE_END figureEn
 	std::for_each(m_FigureData.begin(), m_FigureData.end(), [](const FigureData& data)
 	{
 		assert(data.m_LineEndPoints.size() == data.m_LineStartPoints.size());
+		assert(data.m_LineEndPoints.size() % 2 == 0);
 	});
 #endif
 
@@ -157,5 +158,51 @@ void SCSimplifiedGeometrySink::WidenOutline(float stroke)
 	if (std::fabsf(m_fStrokeWidth - stroke) > FLT_EPSILON)
 	{
 		m_fStrokeWidth = stroke;
+
+		std::for_each(m_FigureData.begin(), m_FigureData.end(), [stroke](FigureData& figureData)
+		{
+			for (size_t i = 0, n = figureData.m_LineEndPoints.size(); i < n; i+=2)
+			{
+				D2D_POINT_2F& startPoint1 = figureData.m_LineStartPoints[i];
+				D2D_POINT_2F& startPoint2 = figureData.m_LineStartPoints[i+1];
+				D2D_POINT_2F& endPoint1 = figureData.m_LineEndPoints[i];
+				D2D_POINT_2F& endPoint2 = figureData.m_LineEndPoints[i+1];
+
+				// We assume that successive line segments are adjacent and intersect at their start/end points i.e., 
+				// D2D does not simplify the geometry to line segments in random order. Check that assumption by ensuring
+				// successive line segments actually do intersect.
+				assert(SCU::LinesIntersect(&startPoint1.x, &endPoint1.x)); // Exploiting contiguity of vectors and memory layout of D2D_POINT_2F...
+				
+				// Make sure our memory alignment is correct
+				assert(reinterpret_cast<UINT>(&startPoint1) % 16 == 0);
+				assert(reinterpret_cast<UINT>(&endPoint1) % 16 == 0);
+
+				// Extrude the line segment out along the normal by stroke width amount
+				_MM_ALIGN16 float normals[4] = {0.0f};
+				SCU::ComputeLineNormal(&startPoint1.x, &endPoint1.x, normals);
+				SCU::ComputeLineNormal(&startPoint2.x, &endPoint2.x, &normals[2]);
+
+				__m128 strokexmm = _mm_set1_ps(stroke);
+				__m128 normalsxmm = _mm_load_ps(normals);
+				__m128 startxmm = _mm_load_ps(&startPoint1.x);
+				__m128 endxmm = _mm_load_ps(&endPoint1.x);
+				normalsxmm = _mm_mul_ps(normalsxmm, strokexmm);		// normal1 * stroke, normal2 * stroke
+				startxmm = _mm_add_ps(startxmm, normalsxmm);		// start1 + normal1 * stroke, start2 + normal2 * stroke
+				endxmm = _mm_add_ps(endxmm, normalsxmm);			// end1 + normal1 * stroke, end2 + normal2 * stroke;
+
+				_mm_store_ps(&startPoint1.x, startxmm);
+				_mm_store_ps(&endPoint1.x, endxmm);
+
+				// Compute intersection point of extruded lines
+				__m128 intersection = SCU::LineLineIntersectSSE2(startxmm, endxmm);
+
+				// This intersection is now the new endPoint1 and startPoint2
+				_mm_store_ps(normals, intersection); // We don't need normals anymore
+				endPoint1.x = startPoint2.x = normals[0];
+				endPoint1.y = startPoint2.y = normals[1];
+			}
+
+			// Special case the final intersection/widening because the last segment connects with the first segment
+		});
 	}
 }

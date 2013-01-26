@@ -44,6 +44,35 @@ namespace SCU
 		outIntersectY = result[3];
 	}
 
+	// Same as above, but will return the intersection point duplicated in the resulting __m128
+	__forceinline __m128 LineLineIntersectSSE2(__m128 startPoints, __m128 endPoints)
+	{
+		_MM_ALIGN16 static float mask[] = {-1, 1, -1, 1};
+
+		__m128 coeff = _mm_sub_ps(startPoints, endPoints);							// (p0.x - p1.x), (p0.y - p1.y), (p2.x - p3.x), (p2.y - p3.y)
+
+		__m128 temp = _mm_shuffle_ps(endPoints, endPoints, _MM_SHUFFLE(2,3,0,1)); // p1.y, p1.x, p3.y, p3.x
+		__m128 det = _mm_mul_ps(startPoints, temp);								// p0.x * p1.y, p0.y * p1.x, p2.x * p3.y, p2.y * p3.x
+		temp = _mm_shuffle_ps(det, det, _MM_SHUFFLE(2,3,0,1));				// p0.y * p1.x, p0.x * p1.y, p2.y * p3.x, p2.x * p3.y
+		det = _mm_sub_ps(det, temp);										// det1, -det1, det2, -det2
+		det = _mm_shuffle_ps(det, det, _MM_SHUFFLE(0,0,2,2));				// det2, det2, det1, det1
+
+		temp = _mm_mul_ps(det, coeff);										// det2 * x1x2, det2 * y1y2, det1 * x3x4, det1 * y3y4
+		__m128 resultxmm = _mm_shuffle_ps(temp, temp, _MM_SHUFFLE(1,0,3,2));// det1 * x3x4, det1 * y3y4, det2 * x1x2, det2 * y1y2
+		resultxmm = _mm_sub_ps(temp, resultxmm);							// -resX, -resY, resX, resY
+
+		temp = _mm_shuffle_ps(coeff, coeff, _MM_SHUFFLE(0,1,2,3));			// coeff3, coeff2, coeff1, coeff0
+		temp = _mm_mul_ps(coeff, temp);										// coeff0 * coeff3, coeff1 * coeff2, coeff2 * coeff1, coeff3 * coeff0
+		coeff = _mm_shuffle_ps(temp, temp, _MM_SHUFFLE(2,3,0,1));			// coeff1 * coeff2, coeff0 * coeff3, coeff3 * coeff0, coeff2 * coeff1
+		coeff = _mm_sub_ps(temp, coeff);									// denom, -denom, -denom, denom
+		resultxmm = _mm_div_ps(resultxmm, coeff);
+		resultxmm = _mm_shuffle_ps(resultxmm, resultxmm, _MM_SHUFFLE(3,2,3,2));
+		__m128 maskxmm = _mm_load_ps(mask);
+		resultxmm = _mm_mul_ps(resultxmm, maskxmm);
+
+		return resultxmm;
+	}
+
 	// CPU version of the above function for reference.
 	inline void LineLineIntersectCPU(float startPoints[], float endPoints[], float& outIntersectX, float& outIntersectY)
 	{

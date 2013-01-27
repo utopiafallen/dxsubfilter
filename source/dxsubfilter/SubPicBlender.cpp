@@ -106,65 +106,49 @@ void BlendBGRAWithNV12BT601::operator()(SubtitleCore::SubtitlePicture* subpic, B
 
 			// Pixel 1
 			unsigned int BGRA = pBGRAData[0];
-
 			short A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[0]][(255-A)]);
 
 			// Pixel 2
 			BGRA = pBGRAData[1];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[1] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[1]][(255-A)]);
 
 			// Pixel 3
 			BGRA = pBGRAData[2];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[2] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[2]][(255-A)]);
 
 			// Pixel 4
 			BGRA = pBGRAData[3];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[3] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[3]][(255-A)]);
 
 			// Pixel 5
 			BGRA = pBGRAData[4];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[4] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[4]][(255-A)]);
 
 			// Pixel 6
 			BGRA = pBGRAData[5];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[5] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[5]][(255-A)]);
 
 			// Pixel 7
 			BGRA = pBGRAData[6];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[6] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[6]][(255-A)]);
 
 			// Pixel 8
 			BGRA = pBGRAData[7];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[7] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[7]][(255-A)]);
 		}
@@ -177,9 +161,7 @@ void BlendBGRAWithNV12BT601::operator()(SubtitleCore::SubtitlePicture* subpic, B
 			unsigned int* pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
 
 			unsigned int BGRA = pBGRAData[0];
-
 			short A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[0]][(255-A)]);
 		}
@@ -265,65 +247,49 @@ void BlendBGRAWithYV12BT601::operator()(SubtitleCore::SubtitlePicture* subpic, B
 
 			// Pixel 1
 			unsigned int BGRA = pBGRAData[0];
-
 			short A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[0]][(255-A)]);
 
 			// Pixel 2
 			BGRA = pBGRAData[1];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[1] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[1]][(255-A)]);
 
 			// Pixel 3
 			BGRA = pBGRAData[2];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[2] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[2]][(255-A)]);
 
 			// Pixel 4
 			BGRA = pBGRAData[3];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[3] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[3]][(255-A)]);
 
 			// Pixel 5
 			BGRA = pBGRAData[4];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[4] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[4]][(255-A)]);
 
 			// Pixel 6
 			BGRA = pBGRAData[5];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[5] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[5]][(255-A)]);
 
 			// Pixel 7
 			BGRA = pBGRAData[6];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[6] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[6]][(255-A)]);
 
 			// Pixel 8
 			BGRA = pBGRAData[7];
-
 			A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[7] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[7]][(255-A)]);
 		}
@@ -336,9 +302,7 @@ void BlendBGRAWithYV12BT601::operator()(SubtitleCore::SubtitlePicture* subpic, B
 			unsigned int* pBGRAData = reinterpret_cast<unsigned int*>(pSrc);
 
 			unsigned int BGRA = pBGRAData[0];
-
 			short A = (BGRA & 0xFF000000) >> 24;
-
 			pDst[0] = static_cast<unsigned char>(ConvertBGRAToYBT601(BGRA) + 
 														AlphaBlendTable[pDst[0]][(255-A)]);
 		}

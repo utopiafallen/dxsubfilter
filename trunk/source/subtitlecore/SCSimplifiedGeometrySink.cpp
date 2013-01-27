@@ -7,6 +7,32 @@ using namespace SubtitleCore;
 namespace
 {
 	static const UINT DEFAULT_PREALLOCATE_COUNT = 64;
+
+	__forceinline void ExtrudeAndJoinLineSegmentPair(float startPoints[], float endPoints[], float normals[4],
+													 __m128 strokexmm)
+	{
+		// Make sure our memory alignment is correct
+		assert(reinterpret_cast<ptrdiff_t>(startPoints) % 16 == 0);
+		assert(reinterpret_cast<ptrdiff_t>(endPoints) % 16 == 0);
+
+		__m128 normalsxmm = _mm_load_ps(normals);
+		__m128 startxmm = _mm_load_ps(startPoints);
+		__m128 endxmm = _mm_load_ps(endPoints);
+		normalsxmm = _mm_mul_ps(normalsxmm, strokexmm);		// normal1 * stroke, normal2 * stroke
+		startxmm = _mm_add_ps(startxmm, normalsxmm);		// start1 + normal1 * stroke, start2 + normal2 * stroke
+		endxmm = _mm_add_ps(endxmm, normalsxmm);			// end1 + normal1 * stroke, end2 + normal2 * stroke;
+
+		_mm_store_ps(startPoints, startxmm);
+		_mm_store_ps(endPoints, endxmm);
+
+		// Compute intersection point of extruded lines
+		__m128 intersection = SCU::LineLineIntersectSSE2(startxmm, endxmm);
+
+		// This intersection is now the new endPoint1 and startPoint2
+		_mm_store_ps(normals, intersection); // We don't need normals anymore
+		endPoints[0] = startPoints[2] = normals[0];
+		endPoints[1] = startPoints[3] = normals[1];
+	}
 };
 
 SCSimplifiedGeometrySink::FigureData::FigureData()
@@ -102,11 +128,14 @@ STDMETHODIMP_(void) SCSimplifiedGeometrySink::AddLines(CONST D2D1_POINT_2F* poin
 	{
 		// For efficiency with SSE2, we end up duplicating begin and end points so that we have discrete
 		// line segments stored.
-		for (size_t i = 0; i < pointsCount; i++)
+		for (size_t i = 0; i < pointsCount - 1; i++)
 		{
 			m_FigureData[m_CurrentFigureIndex].m_LineEndPoints.push_back(points[i]);
 			m_FigureData[m_CurrentFigureIndex].m_LineStartPoints.push_back(points[i]);
 		}
+
+		// Can't duplicate the final point or we'll end up with mismatched start/end pairs.
+		m_FigureData[m_CurrentFigureIndex].m_LineEndPoints.push_back(points[pointsCount - 1]);
 	}
 	else
 	{
@@ -159,10 +188,28 @@ void SCSimplifiedGeometrySink::WidenOutline(float stroke)
 	{
 		m_fStrokeWidth = stroke;
 
+#if _DEBUG
 		std::for_each(m_FigureData.begin(), m_FigureData.end(), [stroke](FigureData& figureData)
+#else
+		Concurrency::parallel_for_each(m_FigureData.begin(), m_FigureData.end(), [stroke](FigureData& figureData)
+#endif
 		{
-			for (size_t i = 0, n = figureData.m_LineEndPoints.size(); i < n; i+=2)
+			_MM_ALIGN16 float normals[4] = {0.0f};
+			__m128 strokexmm = _mm_set1_ps(stroke);
+
+			// Handle the first pair of line segments separately.
+			assert(SCU::LinesIntersect(&figureData.m_LineStartPoints[0].x, &figureData.m_LineEndPoints[0].x));
+
+			SCU::ComputeLineNormal(&figureData.m_LineStartPoints[0].x, &figureData.m_LineEndPoints[0].x, normals);
+			SCU::ComputeLineNormal(&figureData.m_LineStartPoints[1].x, &figureData.m_LineEndPoints[1].x, &normals[2]);
+
+			ExtrudeAndJoinLineSegmentPair(&figureData.m_LineStartPoints[0].x, &figureData.m_LineEndPoints[0].x, normals, strokexmm);
+
+			// Now do the same for the remaining line segments
+			for (size_t i = 2, n = figureData.m_LineEndPoints.size(); i < n; i+=2)
 			{
+				D2D_POINT_2F& prevStartPoint = figureData.m_LineStartPoints[i-1];
+				D2D_POINT_2F& prevEndPoint = figureData.m_LineEndPoints[i-1];
 				D2D_POINT_2F& startPoint1 = figureData.m_LineStartPoints[i];
 				D2D_POINT_2F& startPoint2 = figureData.m_LineStartPoints[i+1];
 				D2D_POINT_2F& endPoint1 = figureData.m_LineEndPoints[i];
@@ -172,37 +219,42 @@ void SCSimplifiedGeometrySink::WidenOutline(float stroke)
 				// D2D does not simplify the geometry to line segments in random order. Check that assumption by ensuring
 				// successive line segments actually do intersect.
 				assert(SCU::LinesIntersect(&startPoint1.x, &endPoint1.x)); // Exploiting contiguity of vectors and memory layout of D2D_POINT_2F...
-				
-				// Make sure our memory alignment is correct
-				assert(reinterpret_cast<UINT>(&startPoint1) % 16 == 0);
-				assert(reinterpret_cast<UINT>(&endPoint1) % 16 == 0);
 
 				// Extrude the line segment out along the normal by stroke width amount
-				_MM_ALIGN16 float normals[4] = {0.0f};
 				SCU::ComputeLineNormal(&startPoint1.x, &endPoint1.x, normals);
 				SCU::ComputeLineNormal(&startPoint2.x, &endPoint2.x, &normals[2]);
 
-				__m128 strokexmm = _mm_set1_ps(stroke);
-				__m128 normalsxmm = _mm_load_ps(normals);
-				__m128 startxmm = _mm_load_ps(&startPoint1.x);
-				__m128 endxmm = _mm_load_ps(&endPoint1.x);
-				normalsxmm = _mm_mul_ps(normalsxmm, strokexmm);		// normal1 * stroke, normal2 * stroke
-				startxmm = _mm_add_ps(startxmm, normalsxmm);		// start1 + normal1 * stroke, start2 + normal2 * stroke
-				endxmm = _mm_add_ps(endxmm, normalsxmm);			// end1 + normal1 * stroke, end2 + normal2 * stroke;
+				ExtrudeAndJoinLineSegmentPair(&startPoint1.x, &endPoint1.x, normals, strokexmm);
 
-				_mm_store_ps(&startPoint1.x, startxmm);
-				_mm_store_ps(&endPoint1.x, endxmm);
-
-				// Compute intersection point of extruded lines
+				// Fix up connection with the previous line segment
+				__m128 startxmm = _mm_loadu_ps(&prevStartPoint.x);
+				__m128 endxmm = _mm_loadu_ps(&prevEndPoint.x);
 				__m128 intersection = SCU::LineLineIntersectSSE2(startxmm, endxmm);
-
-				// This intersection is now the new endPoint1 and startPoint2
-				_mm_store_ps(normals, intersection); // We don't need normals anymore
-				endPoint1.x = startPoint2.x = normals[0];
-				endPoint1.y = startPoint2.y = normals[1];
+				_mm_store_ps(normals, intersection);
+				prevEndPoint.x = startPoint1.x = normals[0];
+				prevEndPoint.y = startPoint1.y = normals[1];
 			}
 
 			// Special case the final intersection/widening because the last segment connects with the first segment
+			size_t pointCount = figureData.m_LineEndPoints.size();
+			_MM_ALIGN16 float starts[] = {
+				figureData.m_LineStartPoints[pointCount-1].x,
+				figureData.m_LineStartPoints[pointCount-1].y,
+				figureData.m_LineStartPoints[0].x,
+				figureData.m_LineStartPoints[0].x
+			};
+
+			_MM_ALIGN16 float ends[] = {
+				figureData.m_LineEndPoints[pointCount-1].x,
+				figureData.m_LineEndPoints[pointCount-1].y,
+				figureData.m_LineEndPoints[0].x,
+				figureData.m_LineEndPoints[0].y
+			};
+
+			float intersectX(-1.0f), intersectY(-1.0f);
+			SCU::LineLineIntersectSSE2(starts, ends, intersectX, intersectY);
+			figureData.m_LineEndPoints[pointCount-1].x = figureData.m_LineStartPoints[0].x = intersectX;
+			figureData.m_LineEndPoints[pointCount-1].y = figureData.m_LineStartPoints[0].y = intersectY;
 		});
 	}
 }

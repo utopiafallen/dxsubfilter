@@ -6,8 +6,6 @@ using namespace SubtitleCore;
 
 namespace
 {
-	static const UINT DEFAULT_PREALLOCATE_COUNT = 64;
-
 	__forceinline void ExtrudeAndJoinLineSegmentPair(float startPoints[], float endPoints[], float normals[4],
 													 __m128 strokexmm)
 	{
@@ -36,8 +34,8 @@ namespace
 };
 
 SCSimplifiedGeometrySink::FigureData::FigureData()
-	: m_LineStartPoints(DEFAULT_PREALLOCATE_COUNT)
-	, m_LineEndPoints(DEFAULT_PREALLOCATE_COUNT)
+	: m_LineStartPoints()
+	, m_LineEndPoints()
 {
 }
 
@@ -128,14 +126,11 @@ STDMETHODIMP_(void) SCSimplifiedGeometrySink::AddLines(CONST D2D1_POINT_2F* poin
 	{
 		// For efficiency with SSE2, we end up duplicating begin and end points so that we have discrete
 		// line segments stored.
-		for (size_t i = 0; i < pointsCount - 1; i++)
+		for (size_t i = 0; i < pointsCount; i++)
 		{
 			m_FigureData[m_CurrentFigureIndex].m_LineEndPoints.push_back(points[i]);
 			m_FigureData[m_CurrentFigureIndex].m_LineStartPoints.push_back(points[i]);
 		}
-
-		// Can't duplicate the final point or we'll end up with mismatched start/end pairs.
-		m_FigureData[m_CurrentFigureIndex].m_LineEndPoints.push_back(points[pointsCount - 1]);
 	}
 	else
 	{
@@ -147,14 +142,18 @@ STDMETHODIMP_(void) SCSimplifiedGeometrySink::EndFigure(D2D1_FIGURE_END figureEn
 {
 	UNREFERENCED_PARAMETER(figureEnd);
 
-#ifdef _DEBUG
 	// Validate our data is correct.
-	std::for_each(m_FigureData.begin(), m_FigureData.end(), [](const FigureData& data)
+	std::for_each(m_FigureData.begin(), m_FigureData.end(), [](FigureData& data)
 	{
+		// The default line simplification will pass in line segments as a series of connected points
+		// so if there's a mismatch of end points to start points, we need to manually close the segment.
+		if (data.m_LineStartPoints.size() - data.m_LineEndPoints.size() == 1)
+		{
+			data.m_LineEndPoints.push_back(data.m_LineStartPoints[0]);
+		}
 		assert(data.m_LineEndPoints.size() == data.m_LineStartPoints.size());
 		assert(data.m_LineEndPoints.size() % 2 == 0);
 	});
-#endif
 
 	if (m_CurrentState == FIGURE_BEGUN)
 	{

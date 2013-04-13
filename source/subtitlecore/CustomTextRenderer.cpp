@@ -2,6 +2,7 @@
 #include "CustomTextRenderer.h"
 
 #include "CustomDrawingEffects.h"
+#include "SCSimplifiedGeometrySink.h"
 
 #include "ICustomDrawingEffectRenderer.h"
 #include "DrawingEffectRendererFactory.h"
@@ -308,7 +309,7 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 			);
 
 	// Write to the path geometry using the geometry sink.
-	ID2D1GeometrySink* pSink = NULL;
+	ID2D1GeometrySink* pSink = nullptr;
 	hr = pPathGeometry->Open(&pSink);
 
 	// Get the glyph run outline geometries back from DirectWrite and place them within the
@@ -348,6 +349,10 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 		&transform,
 		&pTransformedGeometry
 		);
+
+	// Create simplified geometry
+	SCSimplifiedGeometrySink simplifiedGeoSink;
+	hr = pTransformedGeometry->Simplify(D2D1_GEOMETRY_SIMPLIFICATION_OPTION_LINES, nullptr, &simplifiedGeoSink);
 
 	// Client drawing effect
 	if (clientDrawingEffect)

@@ -118,6 +118,7 @@
     <ClInclude Include="NoSubtitleRenderer.h" />
     <ClInclude Include="OutlineDrawingEffectRenderer.h" />
     <ClInclude Include="SCSimplifiedGeometrySink.h" />
+    <ClInclude Include="SCULexicalCast.h" />
     <ClInclude Include="SCUMath.h" />
     <ClInclude Include="SCUMemory.h" />
     <ClInclude Include="SRTSubtitleEntry.h" />

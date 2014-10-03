@@ -351,8 +351,9 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 		);
 
 	// Create simplified geometry
-	SCSimplifiedGeometrySink simplifiedGeoSink;
-	hr = pTransformedGeometry->Simplify(D2D1_GEOMETRY_SIMPLIFICATION_OPTION_LINES, nullptr, &simplifiedGeoSink);
+	//SCSimplifiedGeometrySink simplifiedGeoSink;
+	//hr = pTransformedGeometry->Simplify(D2D1_GEOMETRY_SIMPLIFICATION_OPTION_LINES, nullptr, &simplifiedGeoSink);
+
 
 	// Client drawing effect
 	if (clientDrawingEffect)

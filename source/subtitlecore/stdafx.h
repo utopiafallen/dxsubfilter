@@ -18,12 +18,14 @@
 #include <emmintrin.h>
 #include <xmmintrin.h>
 
-// WIC
-#include <wincodec.h>
-
 // Direct2D
+#pragma warning( push )
+#pragma warning( disable : 4005) // Disable macro redefinition warning due to wincodec.h
 #include "D2D1.h"
 #include "D2D1Helper.h"
+
+// WIC
+#include <wincodec.h>
 
 // DirectWrite
 #include "DWrite.h"
@@ -42,14 +44,5 @@
 #include <unordered_set>
 #include <tuple>
 #include <set>
-
-// Boost
-#pragma warning( push )
-#pragma warning( disable : 4005) // Disable macro redefinition warning due to wincodec.h
-#include <boost/circular_buffer.hpp>
-#include <boost/multi_array.hpp>
-#include <boost/multi_index_container.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/tokenizer.hpp>
 #pragma warning( pop )
 #endif

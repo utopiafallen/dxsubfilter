@@ -35,6 +35,8 @@
 #include <concurrent_queue.h>
 #include <concurrent_vector.h>
 
+#include "SCULexicalCast.h"
+
 // STL
 #include <algorithm>
 #include <string>

@@ -201,120 +201,110 @@ bool SRTSubtitleRenderer::ParseLine(const std::wstring& line, REFERENCE_TIME rtS
 
 	auto& subtitle_list = m_SubtitleMap[rtStart];
 
-	if (subtitle_list.size() == 0)
+	// Check to make sure this isn't a duplicate
+    bool duplicateLine = false;
+	for (auto it = subtitle_list.begin(), itEnd = subtitle_list.end(); it != itEnd; ++it)
 	{
-		// Subtitle list with this start time was empty so add a new entry
-		subtitle_list.push_back(SRTSubtitleEntry());
-
-		entry = &subtitle_list[0];
-		entry->StartTime = rtStart;
-		entry->EndTime = rtEnd;
-
-		// Add this to set of timespans
-		m_SubtitleTimeSpans.insert(std::make_pair(rtStart, rtEnd));
-	}
-	else
-	{
-		// Check to make sure this isn't a duplicate
-		for (auto it = subtitle_list.begin(), itEnd = subtitle_list.end(); it != itEnd; ++it)
+		if (it->Text.compare(line) == 0)
 		{
-			if (it->Text.compare(line) == 0)
-			{
-				// Do nothing
-				return true;
-			}
+			// Duplicate found.
+			duplicateLine = true;
+            break;
 		}
-
-		subtitle_list.push_back(SRTSubtitleEntry());
-
-		entry = &subtitle_list[subtitle_list.size() - 1];
-		entry->StartTime = rtStart;
-		entry->EndTime = rtEnd;
-
-		// Add this to set of timespans
-		m_SubtitleTimeSpans.insert(std::make_pair(rtStart, rtEnd));
 	}
 
-	std::wstring finalLine;
+    if (!duplicateLine)
+    {
+        subtitle_list.push_back(SRTSubtitleEntry());
 
-	// Check for supported HTML tags
-	size_t startPos, openBracketPos, closeBracketPos;
-	size_t finalStartPos, finalEndPos;
-	std::vector<std::wstring> tagStack;
+        entry = &subtitle_list[subtitle_list.size() - 1];
+        entry->StartTime = rtStart;
+        entry->EndTime = rtEnd;
 
-	startPos = 0;
+        // Add this to set of timespans
+        m_SubtitleTimeSpans.insert(std::make_pair(rtStart, rtEnd));
 
-	while ((openBracketPos = line.find(L"<", startPos)) != std::wstring::npos)
-	{
-		finalStartPos = finalLine.size();
-		finalLine += line.substr(startPos, openBracketPos - startPos);
-		finalEndPos = finalLine.size();
+        std::wstring finalLine;
 
-		if (finalEndPos != finalStartPos)
-		{
-			SRTSubtitleEntry::TextRangeFormat trf;
+        // Check for supported HTML tags
+        size_t startPos, openBracketPos, closeBracketPos;
+        size_t finalStartPos, finalEndPos;
+        std::vector<std::wstring> tagStack;
 
-			trf.Range.length = finalEndPos - finalStartPos;
-			trf.Range.startPosition = finalStartPos;
-			trf.Style = m_SubCoreConfig.m_FontStyle;
-			trf.Weight = m_SubCoreConfig.m_FontWeight;
-			trf.Strikethrough = FALSE;
-			trf.Underline = FALSE;
+        startPos = 0;
 
-			for (auto it = tagStack.begin(), itEnd = tagStack.end(); it != itEnd; ++it)
-			{
-				if ((*it).compare(L"b") == 0)
-				{
-					trf.Weight = DWRITE_FONT_WEIGHT_BOLD;
-				}
-				else if ((*it).compare(L"i") == 0)
-				{
-					trf.Style = DWRITE_FONT_STYLE_ITALIC;
-				}
-				else if ((*it).compare(L"u") == 0)
-				{
-					trf.Underline = TRUE;
-				}
-				else if ((*it).compare(L"s") == 0)
-				{
-					trf.Strikethrough = TRUE;
-				}
-			}
+        while ((openBracketPos = line.find(L"<", startPos)) != std::wstring::npos)
+        {
+            finalStartPos = finalLine.size();
+            finalLine += line.substr(startPos, openBracketPos - startPos);
+            finalEndPos = finalLine.size();
 
-			entry->SubTextFormat.push_back(trf);
-		}
+            if (finalEndPos != finalStartPos)
+            {
+                SRTSubtitleEntry::TextRangeFormat trf;
 
-		// Find close bracket
-		closeBracketPos = line.find(L">", openBracketPos);
+                trf.Range.length = finalEndPos - finalStartPos;
+                trf.Range.startPosition = finalStartPos;
+                trf.Style = m_SubCoreConfig.m_FontStyle;
+                trf.Weight = m_SubCoreConfig.m_FontWeight;
+                trf.Strikethrough = FALSE;
+                trf.Underline = FALSE;
 
-		std::wstring tag = line.substr(openBracketPos+1, closeBracketPos - openBracketPos - 1);
+                for (auto it = tagStack.begin(), itEnd = tagStack.end(); it != itEnd; ++it)
+                {
+                    if ((*it).compare(L"b") == 0)
+                    {
+                        trf.Weight = DWRITE_FONT_WEIGHT_BOLD;
+                    }
+                    else if ((*it).compare(L"i") == 0)
+                    {
+                        trf.Style = DWRITE_FONT_STYLE_ITALIC;
+                    }
+                    else if ((*it).compare(L"u") == 0)
+                    {
+                        trf.Underline = TRUE;
+                    }
+                    else if ((*it).compare(L"s") == 0)
+                    {
+                        trf.Strikethrough = TRUE;
+                    }
+                }
 
-		// Is this a closing tag?
-		if (tag.find(L"/") != std::wstring::npos)
-		{
-			// Malformed scripts are just going to break
-			tagStack.pop_back();
-		}
-		else
-		{
-			tagStack.push_back(tag);
-		}
+                entry->SubTextFormat.push_back(trf);
+            }
 
-		startPos = closeBracketPos+1;
-	}
+            // Find close bracket
+            closeBracketPos = line.find(L">", openBracketPos);
 
-	if (startPos != line.size() - 1)
-	{
-		// Copy remainder line
-		finalLine += line.substr(startPos);
-	}
+            std::wstring tag = line.substr(openBracketPos + 1, closeBracketPos - openBracketPos - 1);
 
-	entry->Text = finalLine;
+            // Is this a closing tag?
+            if (tag.find(L"/") != std::wstring::npos)
+            {
+                // Malformed scripts are just going to break
+                tagStack.pop_back();
+            }
+            else
+            {
+                tagStack.push_back(tag);
+            }
 
-	if (m_SubCoreConfig.m_SubtitleBufferSize > 0)
-	{
-		// Spawn task to render subtitle
-	}
+            startPos = closeBracketPos + 1;
+        }
+
+        if (startPos != line.size() - 1)
+        {
+            // Copy remainder line
+            finalLine += line.substr(startPos);
+        }
+
+        entry->Text = finalLine;
+
+        if (m_SubCoreConfig.m_SubtitleBufferSize > 0)
+        {
+            // Spawn task to render subtitle
+        }
+    }
 
 	return true;
 
@@ -387,8 +377,7 @@ size_t SRTSubtitleRenderer::GetSubtitlePictureCount(REFERENCE_TIME rtNow)
 
 		// Search backwards to find the timespans that encompasses current time. Since we use a
 		// set, we don't have to worry about duplicate entries.
-		auto start = --result;
-		for (;start != m_SubtitleTimeSpans.begin(); --start)
+        for (auto start = result; start != m_SubtitleTimeSpans.begin(); --start)
 		{
 			if (start->first <= rtNow && start->second >= rtNow)
 			{
@@ -572,22 +561,22 @@ void SRTSubtitleRenderer::ComputeTimestamp(const std::wstring& line, REFERENCE_T
 
 	// Get hours
 	endPos = line.find(L":");
-	hours = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+	hours = SCU::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
 
 	// Get minutes
 	startPos = endPos + 1;
 	endPos = line.find(L":", startPos);
-	minutes = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+    minutes = SCU::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
 
 	// Get seconds
 	startPos = endPos + 1;
 	endPos = line.find(L",", startPos);
-	seconds = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+    seconds = SCU::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
 
 	// Get milliseconds
 	startPos = endPos + 1;
 	endPos = line.find(L" ", startPos);
-	milliseconds = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+    milliseconds = SCU::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
 
 	// Compute starting time
 	rtStart = SCU::ConvertTimeToReferenceTime(hours, minutes, seconds, milliseconds);
@@ -597,21 +586,21 @@ void SRTSubtitleRenderer::ComputeTimestamp(const std::wstring& line, REFERENCE_T
 
 	// Get hours
 	endPos = line.find(L":", startPos);
-	hours = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+    hours = SCU::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
 
 	// Get minutes
 	startPos = endPos + 1;
 	endPos = line.find(L":", startPos);
-	minutes = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+    minutes = SCU::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
 
 	// Get seconds
 	startPos = endPos + 1;
 	endPos = line.find(L",", startPos);
-	seconds = boost::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
+    seconds = SCU::lexical_cast<size_t>(line.substr(startPos, endPos - startPos));
 
 	// Get milliseconds
 	startPos = endPos + 1;
-	milliseconds = boost::lexical_cast<size_t>(line.substr(startPos));
+    milliseconds = SCU::lexical_cast<size_t>(line.substr(startPos));
 
 	rtEnd = SCU::ConvertTimeToReferenceTime(hours, minutes, seconds, milliseconds);
 }

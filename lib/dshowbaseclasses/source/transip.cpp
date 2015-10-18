@@ -553,10 +553,9 @@ __out_opt IMediaSample * CTransInPlaceFilter::Copy(IMediaSample *pSource)
         // Copy the sample data
         {
             BYTE *pSourceBuffer, *pDestBuffer;
-            long lSourceSize  = pSource->GetSize();
             long lDestSize = pDest->GetSize();
 
-            ASSERT(lDestSize >= lSourceSize && lDestSize >= lDataLength);
+            ASSERT(lDestSize >= pSource->GetSize() && lDestSize >= lDataLength);
 
             if (FAILED(pSource->GetPointer(&pSourceBuffer)) ||
                 FAILED(pDest->GetPointer(&pDestBuffer)) ||

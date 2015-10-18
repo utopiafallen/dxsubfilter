@@ -122,7 +122,7 @@ AMovieSetupRegisterServer( CLSID   clsServer
   // out subkey as string - CLSID\{}
   //
   OLECHAR szCLSID[CHARS_IN_GUID];
-  HRESULT hr = StringFromGUID2( clsServer
+  WHENASSERTING(HRESULT hr =) StringFromGUID2( clsServer
                               , szCLSID
                               , CHARS_IN_GUID );
   ASSERT( SUCCEEDED(hr) );

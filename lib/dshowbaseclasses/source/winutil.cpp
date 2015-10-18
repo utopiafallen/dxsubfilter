@@ -455,7 +455,7 @@ LRESULT CALLBACK WndProc(HWND hwnd,         // Window handle
 		SetLastError(0);  // because of the way SetWindowLong works
 #endif
 
-		LONG_PTR rc = _SetWindowLongPtr(hwnd, (DWORD)0, pBaseWindow);
+		WHENASSERTING(LONG_PTR rc =) _SetWindowLongPtr(hwnd, (DWORD)0, pBaseWindow);
 
 
 #ifdef DEBUG
@@ -999,7 +999,7 @@ void CDrawImage::UpdateColourTable(HDC hdc, __in BITMAPINFOHEADER *pbmi)
 
 	// Set the new palette in the device context
 
-	UINT uiReturn = SetDIBColorTable(hdc, (UINT)0,
+	WHENASSERTING(UINT uiReturn =) SetDIBColorTable(hdc, (UINT)0,
 		pbmi->biClrUsed,
 		pColourTable);
 

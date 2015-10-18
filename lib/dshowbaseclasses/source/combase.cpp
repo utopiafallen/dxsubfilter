@@ -162,7 +162,7 @@ template<class T> inline static T ourmax( const T & a, const T & b )
 
 STDMETHODIMP_(ULONG) CUnknown::NonDelegatingAddRef()
 {
-    LONG lRef = InterlockedIncrement( &m_cRef );
+    WHENASSERTING(LONG lRef =) InterlockedIncrement( &m_cRef );
     ASSERT(lRef > 0);
     DbgLog((LOG_MEMORY,3,TEXT("    Obj %d ref++ = %d"),
            m_dwCookie, m_cRef));

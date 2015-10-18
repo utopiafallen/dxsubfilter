@@ -2394,7 +2394,7 @@ CCmdQueue::SetTimeAdvise(void)
 			(HEVENT)HANDLE(m_evDue),
 			&m_dwAdvise);
 
-		ASSERT(SUCCEEDED(hr));
+		EXECUTE_ASSERT(SUCCEEDED(hr));
 		m_tCurrentAdvise = current;
 	}
 }

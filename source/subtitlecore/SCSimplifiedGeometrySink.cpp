@@ -10,8 +10,8 @@ namespace
 													 __m128 strokexmm)
 	{
 		// Make sure our memory alignment is correct
-		assert(reinterpret_cast<ptrdiff_t>(startPoints) % 16 == 0);
-		assert(reinterpret_cast<ptrdiff_t>(endPoints) % 16 == 0);
+		AssertMsg((reinterpret_cast<uintptr_t>(startPoints) & 15) == 0, "startPoints is not 16-byte aligned");
+		AssertMsg((reinterpret_cast<uintptr_t>(endPoints) & 15) == 0, "endPoints is not 16-byte aligned");
 
 		__m128 normalsxmm = _mm_load_ps(normals);
 		__m128 startxmm = _mm_load_ps(startPoints);
@@ -151,8 +151,8 @@ STDMETHODIMP_(void) SCSimplifiedGeometrySink::EndFigure(D2D1_FIGURE_END figureEn
 		{
 			data.m_LineEndPoints.push_back(data.m_LineStartPoints[0]);
 		}
-		assert(data.m_LineEndPoints.size() == data.m_LineStartPoints.size());
-		assert(data.m_LineEndPoints.size() % 2 == 0);
+		Assert(data.m_LineEndPoints.size() == data.m_LineStartPoints.size());
+		Assert(data.m_LineEndPoints.size() % 2 == 0);
 	});
 
 	if (m_CurrentState == FIGURE_BEGUN)
@@ -197,7 +197,7 @@ void SCSimplifiedGeometrySink::WidenOutline(float stroke)
 			__m128 strokexmm = _mm_set1_ps(stroke);
 
 			// Handle the first pair of line segments separately.
-			assert(SCU::LinesIntersect(&figureData.m_LineStartPoints[0].x, &figureData.m_LineEndPoints[0].x));
+			Assert(SCU::LinesIntersect(&figureData.m_LineStartPoints[0].x, &figureData.m_LineEndPoints[0].x));
 
 			SCU::ComputeLineNormal(&figureData.m_LineStartPoints[0].x, &figureData.m_LineEndPoints[0].x, normals);
 			SCU::ComputeLineNormal(&figureData.m_LineStartPoints[1].x, &figureData.m_LineEndPoints[1].x, &normals[2]);
@@ -217,7 +217,7 @@ void SCSimplifiedGeometrySink::WidenOutline(float stroke)
 				// We assume that successive line segments are adjacent and intersect at their start/end points i.e., 
 				// D2D does not simplify the geometry to line segments in random order. Check that assumption by ensuring
 				// successive line segments actually do intersect.
-				assert(SCU::LinesIntersect(&startPoint1.x, &endPoint1.x)); // Exploiting contiguity of vectors and memory layout of D2D_POINT_2F...
+				Assert(SCU::LinesIntersect(&startPoint1.x, &endPoint1.x)); // Exploiting contiguity of vectors and memory layout of D2D_POINT_2F...
 
 				// Extrude the line segment out along the normal by stroke width amount
 				SCU::ComputeLineNormal(&startPoint1.x, &endPoint1.x, normals);

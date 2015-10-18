@@ -142,7 +142,7 @@ STDMETHODIMP CustomTextRenderer::DrawStrikethrough(
 	HRESULT hr;
 
 	DrawingContext* context = static_cast<DrawingContext*>(clientDrawingContext);
-	assert(context);
+	Assert(context);
 
 	D2D1_RECT_F rect = D2D1::RectF(
 		0,
@@ -218,7 +218,7 @@ STDMETHODIMP CustomTextRenderer::DrawUnderline(
 	HRESULT hr;
 
 	DrawingContext* context = static_cast<DrawingContext*>(clientDrawingContext);
-	assert(context);
+	Assert(context);
 
 	D2D1_RECT_F rect = D2D1::RectF(
 		0,
@@ -300,7 +300,7 @@ STDMETHODIMP CustomTextRenderer::DrawGlyphRun(
 	UNREFERENCED_PARAMETER(hr);
 
 	DrawingContext* context = static_cast<DrawingContext*>(clientDrawingContext);
-	assert(context);
+	Assert(context);
 
 	// Create the path geometry.
 	ID2D1PathGeometry* pPathGeometry = NULL;

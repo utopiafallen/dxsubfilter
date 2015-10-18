@@ -11,9 +11,11 @@ extern bool DbgAssertFunction(bool expr, wchar_t* expr_string, wchar_t* desc, in
 #define DBG_WIDEN(x) DBG_WIDEN2(x)
 #define __WFILE__ DBG_WIDEN(__FILE__)
 
-#define SCU_ASSERT_MESSAGE(expr, description) {if (DbgAssertFunction((expr), L#expr, L##description, __LINE__, __WFILE__)) {_asm{int 3}}}
+#define AssertMsg(expr, description) {if (DbgAssertFunction((expr), L#expr, L##description, __LINE__, __WFILE__)) {_asm{int 3}}}
+#define Assert(expr) AssertMsg(!!(expr), #expr "was invalid.")
 #else
-#define SCU_ASSERT_MESSAGE(expr, description)
+#define ASSERT(expr, description)
+#define ASSERT(expr)
 #endif // _DEBUG
 
 #endif // SCUDBGASSERT_H_

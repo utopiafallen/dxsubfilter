@@ -164,7 +164,7 @@ bool SRTSubtitleRenderer::ParseScript(const std::vector<std::wstring>& script)
 	for (size_t i = 1; i < script.size(); i++)
 	{
 		// This should be a timestamp
-		assert(CheckLineIsTimestamp(script[i]));
+		Assert(CheckLineIsTimestamp(script[i]));
 
 		REFERENCE_TIME rtStart, rtEnd;
 
@@ -462,7 +462,7 @@ void SRTSubtitleRenderer::GetSubtitlePicture(REFERENCE_TIME rtNow, SubtitlePictu
 			{
 				std::vector<SRTSubtitleEntry> subtitleEntries = m_SubtitleMap[it->first];
 
-				for(auto subIt = subtitleEntries.begin(), itEnd = subtitleEntries.end(); subIt != itEnd; ++subIt)
+				for(auto subIt = subtitleEntries.begin(), subItEnd = subtitleEntries.end(); subIt != subItEnd; ++subIt)
 				{
 					rsub.StartTime = subIt->StartTime;
 					rsub.EndTime = subIt->EndTime;
@@ -659,8 +659,8 @@ SubtitlePicture SRTSubtitleRenderer::RenderSRTSubtitleEntry(SRTSubtitleEntry& en
 	width = SCU::ConvertDIPToPixels(metrics.width + (overhang.right - overhang.left), m_fDPIScaleX) + m_SubCoreConfig.m_uFontBorderWidth + uDIPPadding;
 	height = SCU::ConvertDIPToPixels(metrics.height, m_fDPIScaleY) + m_SubCoreConfig.m_uFontBorderWidth + uDIPPadding;
 
-	SCU_ASSERT_MESSAGE(originX + width <= m_VideoInfo.Width, "Rendered SRT subtitle exceeds width of video frame.");
-	SCU_ASSERT_MESSAGE(originY + height <= m_VideoInfo.Height, "Rendered SRT subtitle exceeds height of video frame.");
+	AssertMsg(originX + width <= m_VideoInfo.Width, "Rendered SRT subtitle exceeds width of video frame.");
+	AssertMsg(originY + height <= m_VideoInfo.Height, "Rendered SRT subtitle exceeds height of video frame.");
 
 	// Offset for the next subtitle to be drawn after this one
 	origin.y = origin.y + (metrics.height + fSpacer + m_SubCoreConfig.m_fFontBorderWidth) * m_fSubtitlePlacementDirection;

@@ -1,2 +1,2 @@
 # dxsubfilter
-DirectShow subtitle renderer. Mostly using this as an exercise in font rendering.
+DirectShow subtitle renderer/filter. Mostly using this as an exercise in font rendering.
